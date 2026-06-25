@@ -1,0 +1,213 @@
+'use client';
+import { useState } from 'react';
+import DashboardLayout from '@/components/DashboardLayout';
+import { Save, Upload, Building2, User, Phone, Mail, MapPin, Globe, Palette, Camera, MessageCircle, Instagram, Facebook } from 'lucide-react';
+
+export default function PengaturanPage() {
+  const [profile, setProfile] = useState({
+    namaKos: "A'aTHaRaZ",
+    deskripsi: "Kos premium dengan fasilitas lengkap dan nyaman",
+    alamat: "Jl. Contoh No. 123, Kota",
+    telepon: "081234567890",
+    email: "kos@example.com",
+    whatsapp: "6281234567890",
+    website: "",
+    instagram: "kos_aatharaz",
+    facebook: "",
+  });
+
+  const [logo, setLogo] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [toast, setToast] = useState('');
+
+  function showToast(msg: string) {
+    setToast(msg);
+    setTimeout(() => setToast(''), 3000);
+  }
+
+  function handleSave(e: React.FormEvent) {
+    e.preventDefault();
+    setSaving(true);
+    // Simulate save
+    setTimeout(() => {
+      setSaving(false);
+      showToast('Pengaturan berhasil disimpan');
+    }, 500);
+  }
+
+  function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (ev) => setLogo(ev.target?.result as string);
+      reader.readAsDataURL(file);
+    }
+  }
+
+  const inputStyle = {
+    width: '100%', padding: '10px 14px', border: '1.5px solid var(--border)',
+    borderRadius: 10, fontSize: 14, fontFamily: 'inherit', outline: 'none',
+    background: '#fff', transition: 'border-color 0.2s', boxSizing: 'border-box' as const,
+  };
+
+  const labelStyle = {
+    display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)',
+    marginBottom: 6, textTransform: 'uppercase' as const, letterSpacing: '0.5px',
+  };
+
+  return (
+    <DashboardLayout>
+      <div className="page-header">
+        <div>
+          <h2>Pengaturan</h2>
+          <p style={{ fontSize:13, color:'var(--text-secondary)', marginTop:2 }}>
+            Kelola profil kos dan informasi kontak
+          </p>
+        </div>
+      </div>
+
+      {/* Toast */}
+      {toast && (
+        <div style={{
+          position: 'fixed', top: 24, right: 24, zIndex: 9999,
+          background: 'var(--success)', color: '#fff', padding: '12px 24px',
+          borderRadius: 10, fontWeight: 600, fontSize: 13, boxShadow: '0 4px 12px rgba(16,185,129,0.3)'
+        }}>
+          {toast}
+        </div>
+      )}
+
+      <form onSubmit={handleSave}>
+        <div style={{ display: 'grid', gap: 20, maxWidth: 800 }}>
+
+          {/* LOGO */}
+          <div className="card">
+            <div className="card-header">
+              <div className="stat-icon purple"><Camera size={18} /></div>
+              <h3>Logo Kos</h3>
+            </div>
+            <div className="card-body">
+              <div style={{ display: 'flex', alignItems: 'center', gap: 24 }}>
+                <div style={{
+                  width: 80, height: 80, borderRadius: 16,
+                  background: logo ? `url(${logo}) center/cover no-repeat` : 'linear-gradient(135deg, #4F46E5, #6366F1)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: '#fff', fontSize: 28, fontWeight: 800, border: '2px solid var(--border)',
+                  flexShrink: 0
+                }}>
+                  {!logo && 'A'}
+                </div>
+                <div>
+                  <label className="btn btn-secondary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+                    <Upload size={16} /> Pilih Logo
+                    <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ display: 'none' }} />
+                  </label>
+                  <p style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 8 }}>
+                    Format: PNG, JPG. Ukuran maks: 2MB
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* PROFIL USAHA */}
+          <div className="card">
+            <div className="card-header">
+              <div className="stat-icon blue"><Building2 size={18} /></div>
+              <h3>Profil Usaha</h3>
+            </div>
+            <div className="card-body">
+              <div style={{ display:'grid', gap:16 }}>
+                <div>
+                  <label style={labelStyle}>Nama Kos</label>
+                  <input type="text" value={profile.namaKos} onChange={e => setProfile(p => ({...p, namaKos: e.target.value}))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Deskripsi</label>
+                  <textarea rows={3} value={profile.deskripsi} onChange={e => setProfile(p => ({...p, deskripsi: e.target.value}))} style={{...inputStyle, resize:'vertical'}} />
+                </div>
+                <div>
+                  <label style={labelStyle}>Alamat</label>
+                  <textarea rows={2} value={profile.alamat} onChange={e => setProfile(p => ({...p, alamat: e.target.value}))} style={{...inputStyle, resize:'vertical'}} />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* KONTAK */}
+          <div className="card">
+            <div className="card-header">
+              <div className="stat-icon orange"><Phone size={18} /></div>
+              <h3>Kontak & Media Sosial</h3>
+            </div>
+            <div className="card-body">
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+                <div>
+                  <label style={labelStyle}><Phone size={14} style={{marginRight:4}} /> Telepon</label>
+                  <input type="tel" value={profile.telepon} onChange={e => setProfile(p => ({...p, telepon: e.target.value}))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}><MessageCircle size={14} style={{marginRight:4}} /> WhatsApp</label>
+                  <input type="tel" value={profile.whatsapp} onChange={e => setProfile(p => ({...p, whatsapp: e.target.value}))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}><Mail size={14} style={{marginRight:4}} /> Email</label>
+                  <input type="email" value={profile.email} onChange={e => setProfile(p => ({...p, email: e.target.value}))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}><Globe size={14} style={{marginRight:4}} /> Website</label>
+                  <input type="text" value={profile.website} onChange={e => setProfile(p => ({...p, website: e.target.value}))} style={inputStyle} />
+                </div>
+                <div>
+                  <label style={labelStyle}><Instagram size={14} style={{marginRight:4}} /> Instagram</label>
+                  <input type="text" value={profile.instagram} onChange={e => setProfile(p => ({...p, instagram: e.target.value}))} style={inputStyle} placeholder="@username" />
+                </div>
+                <div>
+                  <label style={labelStyle}><Facebook size={14} style={{marginRight:4}} /> Facebook</label>
+                  <input type="text" value={profile.facebook} onChange={e => setProfile(p => ({...p, facebook: e.target.value}))} style={inputStyle} placeholder="URL atau username" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* TEMA */}
+          <div className="card">
+            <div className="card-header">
+              <div className="stat-icon purple"><Palette size={18} /></div>
+              <h3>Tampilan Landing Page</h3>
+            </div>
+            <div className="card-body">
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+                <div>
+                  <label style={labelStyle}>Warna Utama</label>
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <input type="color" defaultValue="#4F46E5" style={{ width:40, height:40, borderRadius:8, border:'1.5px solid var(--border)', cursor:'pointer', padding:2 }} />
+                    <span style={{ fontSize:13, color:'var(--text-secondary)' }}>#4F46E5</span>
+                  </div>
+                </div>
+                <div>
+                  <label style={labelStyle}>Warna Sidebar</label>
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <input type="color" defaultValue="#0F172A" style={{ width:40, height:40, borderRadius:8, border:'1.5px solid var(--border)', cursor:'pointer', padding:2 }} />
+                    <span style={{ fontSize:13, color:'var(--text-secondary)' }}>#0F172A</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* SIMPAN */}
+          <div style={{ display:'flex', justifyContent:'flex-end', gap:12, paddingTop:8 }}>
+            <button type="submit" disabled={saving} className="btn btn-primary" style={{ display:'flex', alignItems:'center', gap:8 }}>
+              {saving ? (
+                <><div className="spinner" style={{ width:16, height:16, borderWidth:2, borderTopColor:'#fff' }} /> Menyimpan...</>
+              ) : (
+                <><Save size={16} /> Simpan Pengaturan</>
+              )}
+            </button>
+          </div>
+        </div>
+      </form>
+    </DashboardLayout>
+  );
+}

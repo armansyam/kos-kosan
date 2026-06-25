@@ -1,0 +1,112 @@
+'use client';
+
+import { useState } from 'react';
+import { signIn } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { Building2, Mail, Lock, LogIn } from 'lucide-react';
+
+export default function LoginPage() {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    const result = await signIn('credentials', {
+      email,
+      password,
+      redirect: false,
+    });
+
+    if (result?.error) {
+      setError('Email atau password salah');
+      setLoading(false);
+    } else {
+      router.push('/dashboard');
+      router.refresh();
+    }
+  };
+
+  return (
+    <div className="login-page">
+      <div className="login-bg" />
+
+      <div className="login-card">
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div className="login-icon">
+            <Building2 size={32} />
+          </div>
+          <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>
+            Manajemen Kos
+          </h1>
+          <p style={{ fontSize: 14, color: '#64748b' }}>
+            Masuk ke dashboard untuk mengelola kos Anda
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit}>
+          {error && <div className="login-error">{error}</div>}
+
+          {/* Email */}
+          <div className="form-group">
+            <label htmlFor="email" style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 5 }}>
+              Email
+            </label>
+            <div className="input-wrapper">
+              <Mail size={17} className="input-icon" />
+              <input
+                id="email"
+                type="email"
+                placeholder="admin@kos.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="form-input input-with-icon"
+              />
+            </div>
+          </div>
+
+          {/* Password */}
+          <div className="form-group">
+            <label htmlFor="password" style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 5 }}>
+              Password
+            </label>
+            <div className="input-wrapper">
+              <Lock size={17} className="input-icon" />
+              <input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="form-input input-with-icon"
+              />
+            </div>
+          </div>
+
+          <button type="submit" disabled={loading} className="login-btn">
+            {loading ? (
+              <span className="spinner" />
+            ) : (
+              <>
+                <LogIn size={18} />
+                Masuk
+              </>
+            )}
+          </button>
+
+          <div className="login-hint" style={{ marginTop: 16 }}>
+            <p>Demo: admin@kos.com / admin123</p>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}

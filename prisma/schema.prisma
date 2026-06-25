@@ -1,0 +1,102 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("users")
+}
+
+model Room {
+  id        String   @id @default(cuid())
+  name      String
+  price     Int
+  status    String   @default("kosong")
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenants Tenant[]
+
+  @@map("rooms")
+}
+
+model Tenant {
+  id            String    @id @default(cuid())
+  fullName      String    @map("full_name")
+  whatsapp      String
+  roomId        String    @map("room_id")
+  checkInDate   DateTime  @map("check_in_date")
+  checkOutDate  DateTime? @map("check_out_date")
+  monthlyPrice  Int       @map("monthly_price")
+  dueDate       Int       @map("due_date")
+  notes         String?
+  active        Boolean   @default(true)
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  room  Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  bills Bill[]
+
+  @@map("tenants")
+}
+
+model Bill {
+  id        String   @id @default(cuid())
+  tenantId  String   @map("tenant_id")
+  month     String
+  amount    Int
+  dueDate   DateTime @map("due_date")
+  status    String   @default("belum_bayar")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@map("bills")
+}
+
+model Payment {
+  id            String   @id @default(cuid())
+  billId        String   @map("bill_id")
+  paymentDate   DateTime @map("payment_date")
+  paymentMethod String   @map("payment_method")
+  amount        Int
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  bill Bill @relation(fields: [billId], references: [id], onDelete: Cascade)
+
+  @@map("payments")
+}
+
+model ElectricityLog {
+  id                String   @id @default(cuid())
+  topupDate         DateTime @map("topup_date")
+  nominal           Int
+  kwhAdded          Float    @map("kwh_added")
+  currentKwh        Float    @map("current_kwh")
+  estimatedDaysLeft Int      @map("estimated_days_left")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@map("electricity_logs")
+}
+
+model Expense {
+  id          String   @id @default(cuid())
+  category    String
+  description String
+  amount      Int
+  date        DateTime
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("expenses")
+}
