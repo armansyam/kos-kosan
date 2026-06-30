@@ -38,6 +38,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const { data: session } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settings, setSettings] = useState<any>(null);
+  const [showDevOverlay, setShowDevOverlay] = useState(false);
 
   useEffect(() => {
     fetch('/api/settings')
@@ -171,6 +172,73 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           {children}
         </main>
       </div>
+
+      {/* ── Developer Watermark ── */}
+      <div 
+        className="dev-watermark-btn" 
+        onClick={() => setShowDevOverlay(!showDevOverlay)}
+        title="Developer Info"
+      >
+        <span style={{ fontWeight: 800, fontSize: '15px', letterSpacing: '-0.5px' }}>SH</span>
+      </div>
+
+      {showDevOverlay && (
+        <div className="dev-watermark-popup">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)', fontWeight: 700 }}>Developer Credit</span>
+            <div className="dev-watermark-status">
+              <span className="dev-watermark-dot" />
+              <span>Active Release</span>
+            </div>
+          </div>
+          <div>
+            <h4 style={{ margin: 0, fontSize: '15px', color: '#1e293b', fontWeight: 700 }}>Sorehari Web Dev</h4>
+            <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+              Designed, built, and optimized with Next.js, Prisma, and custom styling.
+            </p>
+          </div>
+          <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
+            <span style={{ color: 'var(--text-secondary)' }}>System Version</span>
+            <strong style={{ color: '#1e293b' }}>v1.0.0</strong>
+          </div>
+          <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+            <a 
+              href="https://wa.me/6281234567890"
+              target="_blank" 
+              rel="noopener noreferrer"
+              style={{
+                flex: 1,
+                textAlign: 'center',
+                background: 'var(--primary)',
+                color: 'white',
+                padding: '8px 0',
+                borderRadius: '8px',
+                fontSize: '12px',
+                fontWeight: 600,
+                textDecoration: 'none',
+                boxShadow: '0 2px 8px rgba(99, 102, 241, 0.2)'
+              }}
+            >
+              Contact Developer
+            </a>
+            <button 
+              onClick={() => setShowDevOverlay(false)}
+              style={{
+                padding: '8px 12px',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                background: 'white',
+                color: '#64748b',
+                fontSize: '12px',
+                cursor: 'pointer',
+                fontWeight: 600
+              }}
+            >
+              Tutup
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
