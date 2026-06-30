@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Save, Upload, Building2, User, Phone, Mail, MapPin, Globe, Palette, Camera, MessageCircle, Instagram, Facebook } from 'lucide-react';
 
@@ -25,6 +26,7 @@ const PREDEFINED_FACILITIES = [
 ];
 
 export default function PengaturanPage() {
+  const { data: session, update: updateSession } = useSession();
   const [profile, setProfile] = useState({
     namaKos: "A'aTHaRaZ",
     deskripsi: "Kos premium dengan fasilitas lengkap dan nyaman",
@@ -48,6 +50,20 @@ export default function PengaturanPage() {
   const [facList, setFacList] = useState<string[]>([]);
   const [facInput, setFacInput] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Security Account States
+  const [accountEmail, setAccountEmail] = useState('');
+  const [accountName, setAccountName] = useState('');
+  const [accountPassword, setAccountPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [savingAccount, setSavingAccount] = useState(false);
+
+  useEffect(() => {
+    if (session?.user) {
+      setAccountEmail(session.user.email || '');
+      setAccountName(session.user.name || '');
+    }
+  }, [session]);
 
   useEffect(() => {
     fetch('/api/settings')
@@ -105,8 +121,47 @@ export default function PengaturanPage() {
       }
     } catch {
       showToast('Error koneksi');
+    }
+  }
+
+  async function handleSaveAccount(e: React.FormEvent) {
+    e.preventDefault();
+    if (accountPassword && accountPassword !== confirmPassword) {
+      showToast('Konfirmasi password tidak cocok');
+      return;
+    }
+    setSavingAccount(true);
+    try {
+      const res = await fetch('/api/settings/account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: accountEmail,
+          name: accountName,
+          password: accountPassword || undefined
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('Akun keamanan berhasil diperbarui');
+        setAccountPassword('');
+        setConfirmPassword('');
+        // Update client session state
+        updateSession({
+          ...session,
+          user: {
+            ...session?.user,
+            email: accountEmail,
+            name: accountName
+          }
+        });
+      } else {
+        showToast(data.error || 'Gagal memperbarui akun');
+      }
+    } catch {
+      showToast('Error koneksi');
     } finally {
-      setSaving(false);
+      setSavingAccount(false);
     }
   }
 
@@ -467,6 +522,72 @@ export default function PengaturanPage() {
                 <><div className="spinner" style={{ width:16, height:16, borderWidth:2, borderTopColor:'#fff' }} /> Menyimpan...</>
               ) : (
                 <><Save size={16} /> Simpan Pengaturan</>
+              )}
+            </button>
+          </div>
+        </div>
+      </form>
+
+      {/* AKUN KEAMANAN */}
+      <form onSubmit={handleSaveAccount} style={{ marginTop: 24 }}>
+        <div style={{ display: 'grid', gap: 20, maxWidth: 800 }}>
+          <div className="card">
+            <div className="card-header">
+              <div className="stat-icon purple"><User size={18} /></div>
+              <h3>Akun Keamanan Admin</h3>
+            </div>
+            <div className="card-body">
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                <div style={{ gridColumn: 'span 2' }}>
+                  <label style={labelStyle}>Nama Admin</label>
+                  <input 
+                    type="text" 
+                    value={accountName} 
+                    onChange={e => setAccountName(e.target.value)} 
+                    style={inputStyle} 
+                    required 
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Email / Username Admin</label>
+                  <input 
+                    type="email" 
+                    value={accountEmail} 
+                    onChange={e => setAccountEmail(e.target.value)} 
+                    style={inputStyle} 
+                    required 
+                  />
+                </div>
+                <div style={{ display: 'none' }}></div>
+                <div>
+                  <label style={labelStyle}>Password Baru</label>
+                  <input 
+                    type="password" 
+                    value={accountPassword} 
+                    onChange={e => setAccountPassword(e.target.value)} 
+                    style={inputStyle} 
+                    placeholder="Kosongkan jika tidak diubah" 
+                  />
+                </div>
+                <div>
+                  <label style={labelStyle}>Konfirmasi Password Baru</label>
+                  <input 
+                    type="password" 
+                    value={confirmPassword} 
+                    onChange={e => setConfirmPassword(e.target.value)} 
+                    style={inputStyle} 
+                    placeholder="Kosongkan jika tidak diubah" 
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, paddingTop: 8, marginBottom: 32 }}>
+            <button type="submit" disabled={savingAccount} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              {savingAccount ? (
+                <><div className="spinner" style={{ width: 16, height: 16, borderWidth: 2, borderTopColor: '#fff' }} /> Menyimpan...</>
+              ) : (
+                <><Save size={16} /> Simpan Akun Keamanan</>
               )}
             </button>
           </div>
