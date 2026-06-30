@@ -29,7 +29,6 @@ const navItems = [
   { href: '/kamar', label: 'Kamar', icon: BedDouble },
   { href: '/penghuni', label: 'Penghuni', icon: Users },
   { href: '/tagihan', label: 'Tagihan', icon: Receipt },
-  { href: '/monitoring-listrik', label: 'Listrik', icon: Zap },
   { href: '/pengeluaran', label: 'Pengeluaran', icon: Wallet },
   { href: '/laporan', label: 'Laporan', icon: FileText },
 ];

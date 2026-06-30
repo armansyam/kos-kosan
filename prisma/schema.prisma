@@ -23,6 +23,7 @@ model Room {
   price     Int
   status    String   @default("kosong")
   notes     String?
+  floor     Int      @default(1)
   createdAt DateTime @default(now()) @map("created_at")
 
   tenants Tenant[]

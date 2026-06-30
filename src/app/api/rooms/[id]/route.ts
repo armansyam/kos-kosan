@@ -8,15 +8,22 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { name, price, status, notes } = body;
+    const { name, price, status, notes, floor } = body;
 
     const room = await prisma.room.update({
       where: { id },
-      data: { name, price, status, notes },
+      data: { 
+        name, 
+        price, 
+        status, 
+        notes, 
+        floor: floor ? parseInt(floor as any) : 1 
+      },
     });
     return NextResponse.json(room);
   } catch (error) {
-    return NextResponse.json({ error: 'Gagal mengupdate kamar' }, { status: 500 });
+    console.error('PUT room error:', error);
+    return NextResponse.json({ error: 'Gagal mengupdate kamar', detail: String(error) }, { status: 500 });
   }
 }
 

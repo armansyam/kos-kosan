@@ -6,7 +6,7 @@ import DashboardLayout from '@/components/DashboardLayout';
 import {
   Home, Users, FileText, CreditCard, Calendar,
   CheckCircle, XCircle, AlertTriangle, Clock, Wallet,
-  Zap, BedDouble, Receipt, ArrowRight,
+  Zap, BedDouble, Receipt, ArrowRight, Plus,
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -17,6 +17,13 @@ export default function DashboardPage() {
   const [unpaidBills, setUnpaidBills] = useState<any[]>([]);
   const [userName, setUserName] = useState('Admin');
   const [activeTab, setActiveTab] = useState('ringkasan');
+
+  // Electricity modal states
+  const [showTokenModal, setShowTokenModal] = useState(false);
+  const [showUpdateKwhModal, setShowUpdateKwhModal] = useState(false);
+  const [tokenForm, setTokenForm] = useState({ nominal: 0, kwhAdded: 0, currentKwh: 0, estimatedDaysLeft: 0 });
+  const [updateKwhForm, setUpdateKwhForm] = useState({ currentKwh: 0, estimatedDaysLeft: 0 });
+  const [toast, setToast] = useState('');
 
   function formatRp(n: number) { return 'Rp ' + (n || 0).toLocaleString('id-ID'); }
 
@@ -62,6 +69,33 @@ export default function DashboardPage() {
     fetchData();
   }, []);
 
+  async function fetchStats() {
+    try {
+      const statsRes = await fetch('/api/dashboard/stats');
+      if (statsRes.ok) setStats(await statsRes.json());
+    } catch (e) { console.error(e); }
+  }
+
+  async function handleTopup(e: React.FormEvent) {
+    e.preventDefault();
+    await fetch('/api/electricity', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(tokenForm) });
+    setShowTokenModal(false);
+    setTokenForm({ nominal:0, kwhAdded:0, currentKwh:0, estimatedDaysLeft:0 });
+    setToast('Data listrik berhasil dicatat');
+    setTimeout(() => setToast(''), 3000);
+    fetchStats();
+  }
+
+  async function handleUpdateKwh(e: React.FormEvent) {
+    e.preventDefault();
+    await fetch('/api/electricity', { method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ nominal:0, kwhAdded:0, currentKwh:updateKwhForm.currentKwh, estimatedDaysLeft:updateKwhForm.estimatedDaysLeft }) });
+    setShowUpdateKwhModal(false);
+    setToast('Sisa kWh berhasil diperbarui');
+    setTimeout(() => setToast(''), 3000);
+    fetchStats();
+  }
+
   const totalKamar = stats.totalRooms || 0;
   const occupied = stats.occupiedRooms || 0;
   const empty = stats.emptyRooms || 0;
@@ -75,7 +109,6 @@ export default function DashboardPage() {
     { id: 'kamar', label: 'Kamar', icon: BedDouble },
     { id: 'penghuni', label: 'Penghuni', icon: Users },
     { id: 'tagihan', label: 'Tagihan', icon: Receipt },
-    { id: 'listrik', label: 'Listrik', icon: Zap },
   ];
 
   return (
@@ -114,7 +147,7 @@ export default function DashboardPage() {
             </p>
           </div>
           <button 
-            onClick={() => router.push('/monitoring-listrik')}
+            onClick={() => setShowTokenModal(true)}
             style={{
               background: '#ef4444',
               color: 'white',
@@ -313,7 +346,7 @@ export default function DashboardPage() {
       )}
 
       {/* ── ROW 2: Unpaid Tenants + Electricity Token ── */}
-      {(activeTab === 'ringkasan' || activeTab === 'penghuni' || activeTab === 'listrik') && (
+      {(activeTab === 'ringkasan' || activeTab === 'penghuni') && (
         <div className="dash-row" style={{ gridTemplateColumns: activeTab !== 'ringkasan' ? '1fr' : undefined }}>
           {/* Penghuni Belum Bayar — left 60% */}
           {(activeTab === 'ringkasan' || activeTab === 'penghuni') && (
@@ -356,11 +389,21 @@ export default function DashboardPage() {
           )}
 
           {/* Listrik Token — right 40% */}
-          {(activeTab === 'ringkasan' || activeTab === 'listrik') && (
+          {activeTab === 'ringkasan' && (
             <div className="dash-card dash-card-electric">
               <div className="dash-card-header">
                 <span className="dash-card-title"><Zap size={16} color="#D97706" /> Listrik Token</span>
-                <button className="dash-link" onClick={() => router.push('/monitoring-listrik')}>Detail →</button>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <button className="btn btn-sm btn-outline" style={{ fontSize: '11px', padding: '4px 10px', borderColor: '#FDE68A', color: '#92400E' }} onClick={() => {
+                    setUpdateKwhForm({ currentKwh: stats.latestElectricity?.currentKwh || 0, estimatedDaysLeft: stats.latestElectricity?.estimatedDaysLeft || 0 });
+                    setShowUpdateKwhModal(true);
+                  }}>
+                    Update kWh
+                  </button>
+                  <button className="btn btn-sm" style={{ fontSize: '11px', padding: '4px 10px', background: '#D97706', color: 'white', border: 'none' }} onClick={() => setShowTokenModal(true)}>
+                    <Plus size={12} /> Isi Token
+                  </button>
+                </div>
               </div>
               <div className="electric-body">
                 <div className="electric-left">
@@ -423,6 +466,79 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      {/* ── MODAL ISI TOKEN ── */}
+      {showTokenModal && (
+        <div className="modal-overlay" onClick={() => setShowTokenModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>⚡ Catat Pengisian Token</h3>
+              <button className="modal-close" onClick={() => setShowTokenModal(false)}>✕</button>
+            </div>
+            <form onSubmit={handleTopup}>
+              <div className="modal-body">
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>Nominal Isi (Rp)</label>
+                    <input className="form-input" type="number" value={tokenForm.nominal} onChange={e=>setTokenForm({...tokenForm,nominal:parseInt(e.target.value)})} required />
+                  </div>
+                  <div className="form-group">
+                    <label>kWh Ditambahkan</label>
+                    <input className="form-input" type="number" step="0.01" value={tokenForm.kwhAdded} onChange={e=>setTokenForm({...tokenForm,kwhAdded:parseFloat(e.target.value)})} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Sisa kWh Sekarang</label>
+                    <input className="form-input" type="number" step="0.01" value={tokenForm.currentKwh} onChange={e=>setTokenForm({...tokenForm,currentKwh:parseFloat(e.target.value)})} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Estimasi Habis (hari)</label>
+                    <input className="form-input" type="number" value={tokenForm.estimatedDaysLeft} onChange={e=>setTokenForm({...tokenForm,estimatedDaysLeft:parseInt(e.target.value)})} required />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-outline" onClick={() => setShowTokenModal(false)}>Batal</button>
+                <button type="submit" className="btn btn-primary"><Zap size={16} /> Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* ── MODAL UPDATE kWh ── */}
+      {showUpdateKwhModal && (
+        <div className="modal-overlay" onClick={() => setShowUpdateKwhModal(false)}>
+          <div className="modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Update Sisa kWh</h3>
+              <button className="modal-close" onClick={() => setShowUpdateKwhModal(false)}>✕</button>
+            </div>
+            <form onSubmit={handleUpdateKwh}>
+              <div className="modal-body">
+                <p style={{ fontSize:13, color:'var(--text-secondary)', marginBottom:16 }}>
+                  Update sisa kWh saat ini untuk kalkulasi estimasi yang lebih akurat.
+                </p>
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>Sisa kWh Saat Ini</label>
+                    <input className="form-input" type="number" step="0.01" value={updateKwhForm.currentKwh} onChange={e=>setUpdateKwhForm({...updateKwhForm,currentKwh:parseFloat(e.target.value)})} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Estimasi Habis (hari)</label>
+                    <input className="form-input" type="number" value={updateKwhForm.estimatedDaysLeft} onChange={e=>setUpdateKwhForm({...updateKwhForm,estimatedDaysLeft:parseInt(e.target.value)})} required />
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-outline" onClick={() => setShowUpdateKwhModal(false)}>Batal</button>
+                <button type="submit" className="btn btn-primary">Simpan</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {toast && <div className="toast">✅ {toast}</div>}
     </DashboardLayout>
   );
 }

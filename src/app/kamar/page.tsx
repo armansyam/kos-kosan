@@ -5,7 +5,7 @@ import { Plus, Edit, Trash2, Home, Users, XCircle } from 'lucide-react';
 
 interface Tenant { id: string; fullName: string; dueDate: number; active: boolean; }
 interface Room {
-  id: string; name: string; price: number; status: string; notes: string | null;
+  id: string; name: string; price: number; status: string; notes: string | null; floor: number;
   tenants: Tenant[];
 }
 
@@ -13,9 +13,18 @@ export default function KamarPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
-  const [formData, setFormData] = useState({ name: '', price: 0, status: 'kosong', notes: '' });
+  const [formData, setFormData] = useState({ name: '', price: 0, status: 'kosong', notes: '', floor: 1 });
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState('');
+  const [selectedFloor, setSelectedFloor] = useState<'semua' | number>('semua');
+  
+  // Custom floor states
+  const [showCustomFloor, setShowCustomFloor] = useState(false);
+  const [customFloorValue, setCustomFloorValue] = useState('');
+
+  function getRoomFloor(room: Room) {
+    return room.floor || 1;
+  }
 
   useEffect(() => { fetchRooms(); }, []);
 
@@ -28,16 +37,23 @@ export default function KamarPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    const floorToSave = showCustomFloor && customFloorValue ? parseInt(customFloorValue) : formData.floor;
+    const payload = { ...formData, floor: floorToSave };
+    
     if (editingRoom) {
-      await fetch(`/api/rooms/${editingRoom.id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) });
+      await fetch(`/api/rooms/${editingRoom.id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
       showToast('Kamar berhasil diperbarui');
     } else {
-      await fetch('/api/rooms', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) });
+      await fetch('/api/rooms', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
       showToast('Kamar berhasil ditambahkan');
     }
+    // Auto-switch to the saved floor's tab so the room is visible
+    setSelectedFloor(floorToSave);
     setShowModal(false);
     setEditingRoom(null);
-    setFormData({ name:'', price:0, status:'kosong', notes:'' });
+    setFormData({ name:'', price:0, status:'kosong', notes:'', floor:1 });
+    setShowCustomFloor(false);
+    setCustomFloorValue('');
     fetchRooms();
   }
 
@@ -50,7 +66,7 @@ export default function KamarPage() {
 
   function openEdit(room: Room) {
     setEditingRoom(room);
-    setFormData({ name:room.name, price:room.price, status:room.status, notes:room.notes||'' });
+    setFormData({ name:room.name, price:room.price, status:room.status, notes:room.notes||'', floor:room.floor || 1 });
     setShowModal(true);
   }
 
@@ -66,34 +82,56 @@ export default function KamarPage() {
   const kosong = rooms.filter(r=>r.status==='kosong').length;
   const menunggak = rooms.filter(r=>r.status==='menunggak').length;
 
+  const floors = Array.from(new Set(rooms.map(r => getRoomFloor(r)))).sort((a, b) => a - b);
+
+  const filteredRooms = selectedFloor === 'semua'
+    ? rooms
+    : rooms.filter(r => getRoomFloor(r) === selectedFloor);
+
+  const availableFloorOptions = Array.from(new Set([1, 2, 3, ...rooms.map(r => r.floor || 1)])).sort((a, b) => a - b);
+
   return (
     <DashboardLayout>
-      <div className="page-header">
+      <div className="page-header" style={{ marginBottom: 16, paddingBottom: 12 }}>
         <div>
           <h2>Kamar</h2>
           <p style={{ fontSize:13, color:'var(--text-secondary)', marginTop:2 }}>Kelola semua kamar kos Anda</p>
         </div>
         <div style={{ display:'flex', gap:10 }}>
-          <button onClick={() => { setShowModal(true); setEditingRoom(null); setFormData({ name:'', price:0, status:'kosong', notes:'' }); }} className="btn btn-primary">
+          <button onClick={() => { setShowModal(true); setEditingRoom(null); setFormData({ name:'', price:0, status:'kosong', notes:'', floor:1 }); }} className="btn btn-primary">
             <Plus size={16} /> Tambah Kamar
           </button>
         </div>
       </div>
 
-      {/* STAT MINI */}
-      <div className="stats-grid" style={{ marginBottom:24 }}>
-        <div className="stat-card"><div className="stat-icon blue"><Home size={20}/></div><div className="stat-info"><h3>Total</h3><div className="stat-value">{totalRooms}</div></div></div>
-        <div className="stat-card"><div className="stat-icon green"><Users size={20}/></div><div className="stat-info"><h3>Terisi</h3><div className="stat-value" style={{ color:'var(--success)' }}>{terisi}</div></div></div>
-        <div className="stat-card"><div className="stat-icon gray"><Home size={20}/></div><div className="stat-info"><h3>Kosong</h3><div className="stat-value">{kosong}</div></div></div>
-        <div className="stat-card"><div className="stat-icon red"><XCircle size={20}/></div><div className="stat-info"><h3>Menunggak</h3><div className="stat-value" style={{ color:'var(--danger)' }}>{menunggak}</div></div></div>
+      {/* Sub navigation tabs for Floor */}
+      <div className="sub-tabs" style={{ display:'flex', gap:8, marginBottom:20, overflowX:'auto', paddingBottom:4 }}>
+        <button 
+          onClick={() => setSelectedFloor('semua')} 
+          className={`sub-tab-btn ${selectedFloor === 'semua' ? 'active' : ''}`}
+        >
+          Semua Kamar <span className="sub-tab-count">{rooms.length}</span>
+        </button>
+        {floors.map(floor => {
+          const count = rooms.filter(r => getRoomFloor(r) === floor).length;
+          return (
+            <button 
+              key={floor} 
+              onClick={() => setSelectedFloor(floor)} 
+              className={`sub-tab-btn ${selectedFloor === floor ? 'active' : ''}`}
+            >
+              Lantai {floor} <span className="sub-tab-count">{count}</span>
+            </button>
+          );
+        })}
       </div>
 
       {loading ? (
         <div style={{ textAlign:'center', padding:60 }}><div className="spinner" style={{ borderTopColor:'var(--primary)', width:40, height:40, margin:'0 auto' }} /></div>
       ) : (
         <div className="room-groups-list">
-          <div className="dash-room-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-            {rooms.map(room => {
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+            {filteredRooms.map(room => {
               const tenant = room.tenants?.[0];
               const cardColor = room.status === 'terisi' 
                 ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)'
@@ -107,7 +145,7 @@ export default function KamarPage() {
                   className="dash-room-card"
                   style={{
                     background: 'white',
-                    borderRadius: '16px',
+                    borderRadius: '14px',
                     border: '1px solid var(--border)',
                     overflow: 'hidden',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
@@ -117,30 +155,30 @@ export default function KamarPage() {
                   }}
                 >
                   {/* Status Color Bar */}
-                  <div style={{ height: '6px', background: cardColor }} />
+                  <div style={{ height: '5px', background: cardColor }} />
                   
                   {/* Card Content */}
-                  <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     {/* Header: Room Name & Status Badge */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
                       <span style={{
                         background: '#eef2ff',
                         color: 'var(--primary)',
-                        fontSize: '15px',
+                        fontSize: '14px',
                         fontWeight: 800,
-                        padding: '4px 12px',
+                        padding: '3px 10px',
                         borderRadius: '8px',
                         border: '1px solid #e0e7ff'
                       }}>
-                        Kamar {room.name}
+                        {room.name}
                       </span>
-                      {room.status === 'terisi' && <span className="badge badge-success">Terisi</span>}
-                      {room.status === 'kosong' && <span className="badge badge-gray">Kosong</span>}
-                      {room.status === 'menunggak' && <span className="badge badge-danger">Menunggak</span>}
+                      {room.status === 'terisi' && <span className="badge badge-success" style={{ fontSize: '11px' }}>Terisi</span>}
+                      {room.status === 'kosong' && <span className="badge badge-gray" style={{ fontSize: '11px' }}>Kosong</span>}
+                      {room.status === 'menunggak' && <span className="badge badge-danger" style={{ fontSize: '11px' }}>Menunggak</span>}
                     </div>
 
                     {/* Tenant Details */}
-                    <div style={{ fontSize: '13px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px', flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ color: '#94a3b8' }}>Penghuni</span>
                         <span style={{ fontWeight: 600, color: tenant ? '#1e293b' : '#94a3b8' }}>
@@ -151,12 +189,12 @@ export default function KamarPage() {
                         <span style={{ color: '#94a3b8' }}>Harga Sewa</span>
                         <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{formatRp(room.price)}</span>
                       </div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid #f1f5f9', paddingTop: '8px', marginTop: '4px' }}>
-                        <span style={{ color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600 }}>Catatan</span>
-                        <span style={{ fontStyle: room.notes ? 'normal' : 'italic', color: room.notes ? '#475569' : '#94a3b8', fontSize: '12px', lineHeight: '1.4' }}>
-                          {room.notes || 'Tidak ada catatan'}
-                        </span>
-                      </div>
+                      {room.notes && (
+                        <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: '6px', marginTop: '2px' }}>
+                          <span style={{ color: '#94a3b8', fontSize: '11px' }}>Catatan: </span>
+                          <span style={{ color: '#475569', fontSize: '11px' }}>{room.notes}</span>
+                        </div>
+                      )}
                     </div>
 
                     {/* Actions bar */}
@@ -165,13 +203,13 @@ export default function KamarPage() {
                       gap: '8px',
                       justifyContent: 'flex-end',
                       borderTop: '1px solid #f1f5f9',
-                      paddingTop: '12px'
+                      paddingTop: '10px'
                     }}>
-                      <button onClick={() => openEdit(room)} className="btn btn-outline btn-sm" title="Edit Kamar" style={{ padding: '6px 10px' }}>
-                        <Edit size={14} />
+                      <button onClick={() => openEdit(room)} className="btn btn-outline btn-sm" title="Edit Kamar" style={{ padding: '5px 9px' }}>
+                        <Edit size={13} />
                       </button>
-                      <button onClick={() => handleDelete(room.id)} className="btn btn-danger btn-sm" title="Hapus Kamar" style={{ padding: '6px 10px' }}>
-                        <Trash2 size={14} />
+                      <button onClick={() => handleDelete(room.id)} className="btn btn-danger btn-sm" title="Hapus Kamar" style={{ padding: '5px 9px' }}>
+                        <Trash2 size={13} />
                       </button>
                     </div>
                   </div>
@@ -179,9 +217,9 @@ export default function KamarPage() {
               );
             })}
           </div>
-          {rooms.length === 0 && (
+          {filteredRooms.length === 0 && (
             <div className="card" style={{ textAlign: 'center', padding: 32, color: 'var(--text-light)' }}>
-              Belum ada kamar terdaftar
+              {rooms.length === 0 ? 'Belum ada kamar terdaftar' : 'Belum ada kamar di lantai ini'}
             </div>
           )}
         </div>
@@ -189,11 +227,11 @@ export default function KamarPage() {
 
       {/* MODAL KAMAR */}
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
+        <div className="modal-overlay" onClick={() => { setShowModal(false); setShowCustomFloor(false); setCustomFloorValue(''); }}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingRoom ? 'Edit Kamar' : 'Tambah Kamar'}</h3>
-              <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
+              <button className="modal-close" onClick={() => { setShowModal(false); setShowCustomFloor(false); setCustomFloorValue(''); }}>✕</button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
@@ -216,12 +254,56 @@ export default function KamarPage() {
                   </select>
                 </div>
                 <div className="form-group">
+                  <label>Lantai</label>
+                  {!showCustomFloor ? (
+                    <select 
+                      className="form-select" 
+                      value={formData.floor} 
+                      onChange={e => {
+                        if (e.target.value === 'new') {
+                          setShowCustomFloor(true);
+                        } else {
+                          setFormData({ ...formData, floor: parseInt(e.target.value) });
+                        }
+                      }}
+                    >
+                      {availableFloorOptions.map(f => (
+                        <option key={f} value={f}>Lantai {f}</option>
+                      ))}
+                      <option value="new">+ Tambah Lantai Baru</option>
+                    </select>
+                  ) : (
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                      <input 
+                        className="form-input" 
+                        type="number" 
+                        value={customFloorValue} 
+                        onChange={e => setCustomFloorValue(e.target.value)} 
+                        placeholder="Masukkan nomor lantai..." 
+                        min={1}
+                        required 
+                      />
+                      <button 
+                        type="button" 
+                        className="btn btn-outline" 
+                        onClick={() => {
+                          setShowCustomFloor(false);
+                          setCustomFloorValue('');
+                        }}
+                        style={{ padding: '8px 12px' }}
+                      >
+                        Batal
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <div className="form-group">
                   <label>Catatan</label>
                   <textarea className="form-textarea" value={formData.notes} onChange={e=>setFormData({...formData,notes:e.target.value})} placeholder="Fasilitas, kondisi, dll..." />
                 </div>
               </div>
               <div className="modal-footer">
-                <button type="button" className="btn btn-outline" onClick={() => setShowModal(false)}>Batal</button>
+                <button type="button" className="btn btn-outline" onClick={() => { setShowModal(false); setShowCustomFloor(false); setCustomFloorValue(''); }}>Batal</button>
                 <button type="submit" className="btn btn-primary">Simpan</button>
               </div>
             </form>

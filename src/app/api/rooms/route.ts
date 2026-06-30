@@ -15,7 +15,10 @@ export async function GET() {
           },
         },
       },
-      orderBy: { createdAt: 'desc' },
+      orderBy: [
+        { floor: 'asc' },
+        { name: 'asc' },
+      ],
     });
 
     const today = new Date();
@@ -40,10 +43,16 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, price, status, notes } = body;
+    const { name, price, status, notes, floor } = body;
 
     const room = await prisma.room.create({
-      data: { name, price, status: status || 'kosong', notes },
+      data: { 
+        name, 
+        price, 
+        status: status || 'kosong', 
+        notes, 
+        floor: floor ? parseInt(floor) : 1 
+      },
     });
     return NextResponse.json(room, { status: 201 });
   } catch (error) {

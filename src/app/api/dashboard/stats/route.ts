@@ -29,19 +29,29 @@ export async function GET() {
     let emptyRooms = 0;
     let overdueRooms = 0;
 
-    rooms.forEach(room => {
-      const tenant = room.tenants?.[0];
-      if (!tenant) {
+    for (const room of rooms) {
+      const activeTenants = room.tenants || [];
+      if (activeTenants.length === 0) {
         emptyRooms++;
+        // Auto-fix: if room status says terisi/menunggak but no active tenants
+        if (room.status !== 'kosong') {
+          await prisma.room.update({ where: { id: room.id }, data: { status: 'kosong' } });
+        }
       } else {
-        const hasOverdue = tenant.bills.some(bill => new Date(bill.dueDate) < today);
+        const hasOverdue = activeTenants.some(t => t.bills.some(bill => new Date(bill.dueDate) < today));
         if (hasOverdue) {
           overdueRooms++;
+          if (room.status !== 'menunggak') {
+            await prisma.room.update({ where: { id: room.id }, data: { status: 'menunggak' } });
+          }
         } else {
           occupiedRooms++;
+          if (room.status !== 'terisi') {
+            await prisma.room.update({ where: { id: room.id }, data: { status: 'terisi' } });
+          }
         }
       }
-    });
+    }
 
     const [
       totalRooms,

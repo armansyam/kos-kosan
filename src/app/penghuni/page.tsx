@@ -48,17 +48,32 @@ export default function PenghuniPage() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (editingTenant) {
-      await fetch(`/api/tenants/${editingTenant.id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) });
-      showToast('Data penghuni berhasil diperbarui');
-    } else {
-      await fetch('/api/tenants', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) });
-      showToast('Penghuni berhasil ditambahkan');
+    try {
+      if (editingTenant) {
+        const res = await fetch(`/api/tenants/${editingTenant.id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) });
+        if (!res.ok) {
+          const errData = await res.json();
+          alert(errData.error || 'Gagal memperbarui data penghuni');
+          return;
+        }
+        showToast('Data penghuni berhasil diperbarui');
+      } else {
+        const res = await fetch('/api/tenants', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) });
+        if (!res.ok) {
+          const errData = await res.json();
+          alert(errData.error || 'Gagal menambahkan penghuni');
+          return;
+        }
+        showToast('Penghuni berhasil ditambahkan');
+      }
+      setShowModal(false);
+      setEditingTenant(null);
+      resetForm();
+      fetchData();
+    } catch (err) {
+      console.error(err);
+      alert('Terjadi kesalahan koneksi');
     }
-    setShowModal(false);
-    setEditingTenant(null);
-    resetForm();
-    fetchData();
   }
 
   async function handleCheckout(tenant: Tenant) {
@@ -191,6 +206,74 @@ export default function PenghuniPage() {
 
   const availableRooms = rooms.filter(r => r.status === 'kosong' || r.id === editingTenant?.roomId);
 
+  const getBillStatusBadge = (tenant: Tenant) => {
+    if (!tenant.active) return null;
+    if (!tenant.bills || tenant.bills.length === 0) {
+      return (
+        <span style={{
+          fontSize: '10px',
+          fontWeight: 700,
+          padding: '2px 6px',
+          borderRadius: '6px',
+          background: '#f1f5f9',
+          color: '#64748b',
+          border: '1px solid #e2e8f0'
+        }}>
+          Belum Tagihan
+        </span>
+      );
+    }
+    
+    const latestBill = tenant.bills[0];
+    const days = getDaysLeft(latestBill.dueDate);
+    
+    if (latestBill.status === 'lunas') {
+      return (
+        <span style={{
+          fontSize: '10px',
+          fontWeight: 700,
+          padding: '2px 6px',
+          borderRadius: '6px',
+          background: '#dcfce7',
+          color: '#16a34a',
+          border: '1px solid #bbf7d0'
+        }}>
+          Lunas
+        </span>
+      );
+    }
+    
+    if (latestBill.status === 'menunggak' || days < 0) {
+      return (
+        <span style={{
+          fontSize: '10px',
+          fontWeight: 700,
+          padding: '2px 6px',
+          borderRadius: '6px',
+          background: '#fee2e2',
+          color: '#dc2626',
+          border: '1px solid #fecaca'
+        }}>
+          Nunggak
+        </span>
+      );
+    }
+    
+    return (
+      <span style={{
+        fontSize: '10px',
+        fontWeight: 700,
+        padding: '2px 6px',
+        borderRadius: '6px',
+        background: '#fef3c7',
+        color: '#d97706',
+        border: '1px solid #fde68a'
+      }}>
+        Belum Bayar
+      </span>
+    );
+  };
+
   return (
     <DashboardLayout>
       {/* MAIN CONTENT */}
@@ -214,8 +297,8 @@ export default function PenghuniPage() {
       <div className="sub-tabs" style={{ display:'flex', gap:8, marginBottom:20, overflowX:'auto', paddingBottom:4 }}>
         {[
           { key: 'aktif', label: 'Penghuni Aktif', count: activeTenants.length },
-          { key: 'keluar', label: 'Sudah Keluar (≤30 hari)', count: recentCheckouts.length },
-          { key: 'arsip', label: 'Arsip (>30 hari)', count: archivedTenants.length },
+          { key: 'keluar', label: 'Sudah Keluar', count: recentCheckouts.length },
+          { key: 'arsip', label: 'Arsip', count: archivedTenants.length },
         ].map(t => (
           <button 
             key={t.key} 
@@ -258,18 +341,21 @@ export default function PenghuniPage() {
                   {/* Card Body */}
                   <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     {/* Header Info */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-                      <span style={{
-                        background: tenant.active ? '#eef2ff' : '#f1f5f9',
-                        color: tenant.active ? 'var(--primary)' : '#475569',
-                        fontSize: '14px',
-                        fontWeight: 800,
-                        padding: '4px 12px',
-                        borderRadius: '8px',
-                        border: tenant.active ? '1px solid #e0e7ff' : '1px solid #e2e8f0'
-                      }}>
-                        Kamar {tenant.room.name}
-                      </span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                      <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
+                        <span style={{
+                          background: tenant.active ? '#eef2ff' : '#f1f5f9',
+                          color: tenant.active ? 'var(--primary)' : '#475569',
+                          fontSize: '14px',
+                          fontWeight: 800,
+                          padding: '4px 12px',
+                          borderRadius: '8px',
+                          border: tenant.active ? '1px solid #e0e7ff' : '1px solid #e2e8f0'
+                        }}>
+                          Kamar {tenant.room.name}
+                        </span>
+                        {getBillStatusBadge(tenant)}
+                      </div>
                       <span className={`badge ${tenant.active ? 'badge-success' : 'badge-gray'}`}>
                         {tenant.active ? 'Aktif' : 'Keluar'}
                       </span>
