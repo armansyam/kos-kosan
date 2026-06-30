@@ -100,6 +100,18 @@ async function run() {
     console.log('✅ Created upcoming bill for Budi Santoso (a1) for July 2026');
   }
 
+  // 5. Buat token listrik kritis untuk testing peringatan low token
+  await prisma.electricityLog.create({
+    data: {
+      topupDate: new Date(),
+      nominal: 50000,
+      kwhAdded: 32.5,
+      currentKwh: 6.8, // < 10 kWh (Kritis)
+      estimatedDaysLeft: 2, // < 3 Hari (Kritis)
+    }
+  });
+  console.log('✅ Created critical low token electricity log for dashboard alert testing');
+
   console.log('🎉 All test scenarios set up successfully in database!');
   prisma.$disconnect();
 }

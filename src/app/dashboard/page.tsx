@@ -80,6 +80,61 @@ export default function DashboardPage() {
 
   return (
     <DashboardLayout>
+      {/* ── LOW ELECTRICITY TOKEN ALERT ── */}
+      {stats.latestElectricity && (stats.latestElectricity.currentKwh < 10 || stats.latestElectricity.estimatedDaysLeft < 3) && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          background: 'linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%)',
+          border: '1.5px solid #fca5a5',
+          borderRadius: '16px',
+          padding: '16px 20px',
+          marginBottom: '20px',
+          color: '#991b1b',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+        }}>
+          <div style={{
+            background: '#ef4444',
+            color: 'white',
+            width: '36px',
+            height: '36px',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            boxShadow: '0 0 12px rgba(239, 68, 68, 0.4)'
+          }}>
+            <Zap size={18} fill="white" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <h4 style={{ margin: 0, fontSize: '14px', fontWeight: 700, color: '#7f1d1d' }}>Peringatan Token Listrik Kritis!</h4>
+            <p style={{ margin: '2px 0 0 0', fontSize: '13px', color: '#991b1b', opacity: 0.9 }}>
+              Sisa listrik token saat ini tinggal <strong>{stats.latestElectricity.currentKwh.toFixed(2)} kWh</strong> (perkiraan habis dalam <strong>{stats.latestElectricity.estimatedDaysLeft} hari</strong>). Harap segera lakukan pengisian token!
+            </p>
+          </div>
+          <button 
+            onClick={() => router.push('/monitoring-listrik')}
+            style={{
+              background: '#ef4444',
+              color: 'white',
+              border: 'none',
+              borderRadius: '10px',
+              padding: '8px 14px',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              boxShadow: '0 2px 4px rgba(239, 68, 68, 0.2)',
+              transition: 'all 0.2s'
+            }}
+            onMouseOver={(e) => (e.currentTarget.style.background = '#dc2626')}
+            onMouseOut={(e) => (e.currentTarget.style.background = '#ef4444')}
+          >
+            Isi Ulang
+          </button>
+        </div>
+      )}
+
       {/* ── TAB NAV ── */}
       <div className="dash-tabs">
         {tabs.map((t) => {
