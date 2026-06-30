@@ -149,7 +149,7 @@ export default function LoginPage() {
               onMouseOver={(e) => e.currentTarget.style.color = 'var(--primary, #4f46e5)'}
               onMouseOut={(e) => e.currentTarget.style.color = '#64748b'}
             >
-              Lupa Password? Hubungi Developer
+              Lupa Password?
             </a>
           </div>
         </form>
@@ -158,7 +158,7 @@ export default function LoginPage() {
         <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 12, color: '#94a3b8' }}>
           <span>Developed by</span>
           <a 
-            href="https://github.com/armansyam" 
+            href="https://ammang.my.id" 
             target="_blank" 
             rel="noopener noreferrer" 
             style={{ display: 'inline-flex', alignItems: 'center', transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)' }}

@@ -234,7 +234,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
           <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
             <a 
-              href="https://github.com/armansyam"
+              href="https://ammang.my.id"
               target="_blank" 
               rel="noopener noreferrer"
               style={{
@@ -250,7 +250,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 boxShadow: '0 2px 8px rgba(99, 102, 241, 0.2)'
               }}
             >
-              GitHub Profile
+              Developer Website
             </a>
             <button 
               onClick={() => setShowDevOverlay(false)}
