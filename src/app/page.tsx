@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import {
   Building2, Phone, CheckCircle, XCircle, Wifi, Car,
   ShieldCheck, Droplets, Zap, Star, MessageCircle,
+  Wind, Tv, Bath, Bed, ChefHat, Shirt, Key, Coffee, BookOpen, Dumbbell,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -50,8 +51,29 @@ export default function LandingPage() {
     const nameLower = name.toLowerCase();
     
     let icon = <CheckCircle size={22} />; // fallback
+    
     if (nameLower.includes('wifi') || nameLower.includes('internet')) {
       icon = <Wifi size={22} />;
+    } else if (nameLower.includes('ac') || nameLower.includes('cooler') || nameLower.includes('pendingin') || nameLower.includes('angin')) {
+      icon = <Wind size={22} />;
+    } else if (nameLower.includes('tv') || nameLower.includes('televisi') || nameLower.includes('hiburan')) {
+      icon = <Tv size={22} />;
+    } else if (nameLower.includes('kamar mandi') || nameLower.includes('toilet') || nameLower.includes('wc') || nameLower.includes('shower') || nameLower.includes('mandi')) {
+      icon = <Bath size={22} />;
+    } else if (nameLower.includes('kasur') || nameLower.includes('bed') || nameLower.includes('tidur') || nameLower.includes('springbed')) {
+      icon = <Bed size={22} />;
+    } else if (nameLower.includes('laundry') || nameLower.includes('cuci') || nameLower.includes('setrika') || nameLower.includes('baju')) {
+      icon = <Shirt size={22} />;
+    } else if (nameLower.includes('dapur') || nameLower.includes('kompor') || nameLower.includes('masak') || nameLower.includes('chef')) {
+      icon = <ChefHat size={22} />;
+    } else if (nameLower.includes('kunci') || nameLower.includes('akses') || nameLower.includes('card') || nameLower.includes('key')) {
+      icon = <Key size={22} />;
+    } else if (nameLower.includes('kopi') || nameLower.includes('minum') || nameLower.includes('dispenser') || nameLower.includes('coffee') || nameLower.includes('teh')) {
+      icon = <Coffee size={22} />;
+    } else if (nameLower.includes('meja') || nameLower.includes('belajar') || nameLower.includes('kursi') || nameLower.includes('buku') || nameLower.includes('kerja')) {
+      icon = <BookOpen size={22} />;
+    } else if (nameLower.includes('gym') || nameLower.includes('olahraga') || nameLower.includes('fitnes') || nameLower.includes('sehat')) {
+      icon = <Dumbbell size={22} />;
     } else if (nameLower.includes('parkir') || nameLower.includes('mobil') || nameLower.includes('motor') || nameLower.includes('kendaraan')) {
       icon = <Car size={22} />;
     } else if (nameLower.includes('aman') || nameLower.includes('security') || nameLower.includes('keamanan') || nameLower.includes('cctv') || nameLower.includes('penjaga')) {
@@ -60,7 +82,7 @@ export default function LandingPage() {
       icon = <Droplets size={22} />;
     } else if (nameLower.includes('listrik') || nameLower.includes('pln') || nameLower.includes('token') || nameLower.includes('daya')) {
       icon = <Zap size={22} />;
-    } else if (nameLower.includes('bersih') || nameLower.includes('nyaman') || nameLower.includes('cuci') || nameLower.includes('cleaning') || nameLower.includes('ruang') || nameLower.includes('dapur') || nameLower.includes('kasur')) {
+    } else if (nameLower.includes('bersih') || nameLower.includes('nyaman') || nameLower.includes('cleaning') || nameLower.includes('ruang')) {
       icon = <Building2 size={22} />;
     }
 
