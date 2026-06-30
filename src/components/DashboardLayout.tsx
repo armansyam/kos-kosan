@@ -179,7 +179,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         onClick={() => setShowDevOverlay(!showDevOverlay)}
         title="Developer Info"
       >
-        <span style={{ fontWeight: 800, fontSize: '15px', letterSpacing: '-0.5px' }}>SH</span>
+        <span style={{ fontWeight: 800, fontSize: '15px', letterSpacing: '-0.5px' }}>AMS</span>
       </div>
 
       {showDevOverlay && (
@@ -192,7 +192,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           </div>
           <div>
-            <h4 style={{ margin: 0, fontSize: '15px', color: '#1e293b', fontWeight: 700 }}>Sorehari Web Dev</h4>
+            <h4 style={{ margin: 0, fontSize: '15px', color: '#1e293b', fontWeight: 700 }}>AMS</h4>
             <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
               Designed, built, and optimized with Next.js, Prisma, and custom styling.
             </p>
@@ -203,7 +203,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
           <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
             <a 
-              href="https://wa.me/6281234567890"
+              href="https://github.com/armansyam"
               target="_blank" 
               rel="noopener noreferrer"
               style={{
@@ -219,7 +219,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 boxShadow: '0 2px 8px rgba(99, 102, 241, 0.2)'
               }}
             >
-              Contact Developer
+              GitHub Profile
             </a>
             <button 
               onClick={() => setShowDevOverlay(false)}
