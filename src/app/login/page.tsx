@@ -116,10 +116,6 @@ export default function LoginPage() {
               </>
             )}
           </button>
-
-          <div className="login-hint" style={{ marginTop: 16 }}>
-            <p>Demo: admin@kos.com / admin123</p>
-          </div>
         </form>
       </div>
     </div>
