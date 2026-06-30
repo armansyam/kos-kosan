@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Building2, Mail, Lock, LogIn } from 'lucide-react';
@@ -10,7 +10,22 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [settings, setSettings] = useState<any>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(res => res.json())
+      .then(data => {
+        if (data && !data.error) {
+          setSettings(data);
+          if (data.colorUtama) {
+            document.documentElement.style.setProperty('--primary', data.colorUtama);
+            document.documentElement.style.setProperty('--primary-dark', data.colorUtama + 'dd');
+          }
+        }
+      }).catch(() => {});
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,12 +53,12 @@ export default function LoginPage() {
 
       <div className="login-card">
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div className="login-icon">
-            <Building2 size={32} />
+         <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <div className="login-icon" style={settings?.logo ? { background: `url(${settings.logo}) center/cover no-repeat` } : undefined}>
+            {!settings?.logo && <Building2 size={32} />}
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>
-            Manajemen Kos
+            {settings?.namaKos || "Manajemen Kos"}
           </h1>
           <p style={{ fontSize: 14, color: '#64748b' }}>
             Masuk ke dashboard untuk mengelola kos Anda
