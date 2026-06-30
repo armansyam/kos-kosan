@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { ensureCurrentMonthBills } from '@/lib/billing';
 
 export async function GET() {
   try {
+    await ensureCurrentMonthBills();
     const today = new Date();
     const currentMonth = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}`;
 

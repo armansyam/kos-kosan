@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { ensureCurrentMonthBills } from '@/lib/billing';
 
 export async function GET() {
   try {
+    await ensureCurrentMonthBills();
     const bills = await prisma.bill.findMany({
       include: { tenant: { include: { room: true } }, payments: true },
       orderBy: { createdAt: 'desc' },
