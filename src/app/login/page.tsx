@@ -89,14 +89,14 @@ export default function LoginPage() {
           {/* Email */}
           <div className="form-group">
             <label htmlFor="email" style={{ fontSize: 13, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 5 }}>
-              Email
+              Email / Username
             </label>
             <div className="input-wrapper">
               <Mail size={17} className="input-icon" />
               <input
                 id="email"
                 type="email"
-                placeholder="admin@kos.com"
+                placeholder="admin@ams.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
