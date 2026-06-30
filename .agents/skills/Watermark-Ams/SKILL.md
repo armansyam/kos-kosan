@@ -1,5 +1,5 @@
 ---
-name: developer-watermark
+name: Watermark-Ams
 description: "Memasang watermark developer melayang (floating credit bubble) dengan inisial AMS dan link ke profil GitHub di setiap proyek aplikasi web."
 ---
 
