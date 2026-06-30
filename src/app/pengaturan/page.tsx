@@ -3,6 +3,27 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Save, Upload, Building2, User, Phone, Mail, MapPin, Globe, Palette, Camera, MessageCircle, Instagram, Facebook } from 'lucide-react';
 
+const PREDEFINED_FACILITIES = [
+  { name: 'WiFi Gratis' },
+  { name: 'AC' },
+  { name: 'Kamar Mandi Dalam' },
+  { name: 'Kasur Springbed' },
+  { name: 'Parkir Mobil' },
+  { name: 'Parkir Motor' },
+  { name: 'Keamanan 24 Jam' },
+  { name: 'Air Bersih' },
+  { name: 'Listrik Termasuk' },
+  { name: 'Bersih & Nyaman' },
+  { name: 'TV' },
+  { name: 'Dapur Bersama' },
+  { name: 'Cuci & Laundry' },
+  { name: 'Gym / Fitnes' },
+  { name: 'Kopi & Dispenser' },
+  { name: 'Meja Belajar' },
+  { name: 'Balkon' },
+  { name: 'CCTV' }
+];
+
 export default function PengaturanPage() {
   const [profile, setProfile] = useState({
     namaKos: "A'aTHaRaZ",
@@ -17,12 +38,16 @@ export default function PengaturanPage() {
     colorUtama: "#4F46E5",
     colorSidebar: "#0F172A",
     rekening: "",
-    fasilitas: "WiFi Gratis,Parkir Luas,Keamanan 24 Jam,Air Bersih,Listrik Termasuk,Bersih & Nyaman",
   });
 
   const [logo, setLogo] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
+  
+  // Facilities States
+  const [facList, setFacList] = useState<string[]>([]);
+  const [facInput, setFacInput] = useState('');
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     fetch('/api/settings')
@@ -42,8 +67,12 @@ export default function PengaturanPage() {
             colorUtama: data.colorUtama || "#4F46E5",
             colorSidebar: data.colorSidebar || "#0F172A",
             rekening: data.rekening || "",
-            fasilitas: data.fasilitas || "WiFi Gratis,Parkir Luas,Keamanan 24 Jam,Air Bersih,Listrik Termasuk,Bersih & Nyaman",
           });
+          if (data.fasilitas) {
+            setFacList(data.fasilitas.split(',').map((f: any) => f.trim()).filter(Boolean));
+          } else {
+            setFacList(["WiFi Gratis", "Parkir Luas", "Keamanan 24 Jam", "Air Bersih", "Listrik Termasuk", "Bersih & Nyaman"]);
+          }
           if (data.logo) {
             setLogo(data.logo);
           }
@@ -63,7 +92,7 @@ export default function PengaturanPage() {
       const res = await fetch('/api/settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...profile, logo }),
+        body: JSON.stringify({ ...profile, logo, fasilitas: facList.join(',') }),
       });
       if (res.ok) {
         showToast('Pengaturan berhasil disimpan');
@@ -263,17 +292,142 @@ export default function PengaturanPage() {
                 </div>
               </div>
               <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
-                <label style={labelStyle}>Daftar Fasilitas Kos (Pisahkan dengan koma)</label>
-                <textarea 
-                  rows={2} 
-                  value={profile.fasilitas} 
-                  onChange={e => setProfile(p => ({...p, fasilitas: e.target.value}))} 
-                  style={{...inputStyle, resize:'vertical'}}
-                  placeholder="WiFi Gratis, Parkir Luas, Keamanan 24 Jam, Air Bersih, Listrik Termasuk, Bersih & Nyaman" 
-                />
-                <p style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 8 }}>
-                  Tuliskan fasilitas kos Anda dipisahkan dengan tanda koma (e.g. WiFi Gratis, AC, Kamar Mandi Dalam). Sistem akan otomatis mencocokkan kata kunci dengan ikon yang sesuai.
-                </p>
+                <label style={labelStyle}>Daftar Fasilitas Kos</label>
+                
+                {/* Active Tags list */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+                  {facList.map((fac, idx) => (
+                    <span key={idx} style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      background: '#eff6ff',
+                      color: '#1d4ed8',
+                      padding: '6px 14px',
+                      borderRadius: '99px',
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      border: '1px solid #bfdbfe',
+                      transition: 'all 0.15s ease'
+                    }}>
+                      {fac}
+                      <button 
+                        type="button" 
+                        onClick={() => setFacList(facList.filter(item => item !== fac))}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#3b82f6',
+                          cursor: 'pointer',
+                          fontWeight: 'bold',
+                          padding: 0,
+                          marginLeft: '4px',
+                          fontSize: '13px',
+                          display: 'inline-flex',
+                          alignItems: 'center'
+                        }}
+                        title="Hapus"
+                      >
+                        ✕
+                      </button>
+                    </span>
+                  ))}
+                  {facList.length === 0 && (
+                    <span style={{ fontSize: '13px', color: 'var(--text-light)', fontStyle: 'italic' }}>Belum ada fasilitas ditambahkan.</span>
+                  )}
+                </div>
+
+                {/* Tags Search/Autocomplete input */}
+                <div style={{ position: 'relative' }}>
+                  <input 
+                    type="text" 
+                    value={facInput}
+                    onChange={e => {
+                      setFacInput(e.target.value);
+                      setShowSuggestions(true);
+                    }}
+                    onFocus={() => setShowSuggestions(true)}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const val = facInput.trim();
+                        if (val && !facList.includes(val)) {
+                          setFacList([...facList, val]);
+                          setFacInput('');
+                          setShowSuggestions(false);
+                        }
+                      }
+                    }}
+                    style={inputStyle}
+                    placeholder="Cari atau ketik fasilitas baru lalu tekan Enter (Contoh: AC, TV)..."
+                  />
+
+                  {/* Auto-complete suggestions dropdown */}
+                  {showSuggestions && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      background: 'white',
+                      border: '1px solid var(--border)',
+                      borderRadius: '10px',
+                      boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                      zIndex: 100,
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      marginTop: '6px',
+                      boxSizing: 'border-box'
+                    }}>
+                      {PREDEFINED_FACILITIES
+                        .filter(f => f.name.toLowerCase().includes(facInput.toLowerCase()) && !facList.includes(f.name))
+                        .map(f => (
+                          <div 
+                            key={f.name}
+                            onClick={() => {
+                              setFacList([...facList, f.name]);
+                              setFacInput('');
+                              setShowSuggestions(false);
+                            }}
+                            style={{
+                              padding: '10px 14px',
+                              cursor: 'pointer',
+                              fontSize: '13px',
+                              color: '#334155',
+                              borderBottom: '1px solid #f1f5f9',
+                              textAlign: 'left',
+                              transition: 'background 0.15s'
+                            }}
+                            onMouseOver={e => e.currentTarget.style.background = '#f8fafc'}
+                            onMouseOut={e => e.currentTarget.style.background = 'white'}
+                          >
+                            ➕ {f.name}
+                          </div>
+                        ))}
+                      {facInput.trim() && !PREDEFINED_FACILITIES.some(f => f.name.toLowerCase() === facInput.toLowerCase()) && (
+                        <div 
+                          onClick={() => {
+                            setFacList([...facList, facInput.trim()]);
+                            setFacInput('');
+                            setShowSuggestions(false);
+                          }}
+                          style={{
+                            padding: '10px 14px',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            color: '#4F46E5',
+                            fontWeight: 600,
+                            borderBottom: '1px solid #f1f5f9',
+                            textAlign: 'left'
+                          }}
+                        >
+                          ✨ Tambah Kustom: "{facInput.trim()}" (Tekan Enter)
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
