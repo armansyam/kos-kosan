@@ -162,198 +162,212 @@ export default function DashboardPage() {
       </div>
 
       {/* ── ROW 1: Upcoming Bills + Status Kamar Donut ── */}
-      <div className="dash-row">
-        {/* Jatuh Tempo in 7 Hari — left 60% */}
-        <div className="dash-card dash-card-wide">
-          <div className="dash-card-header">
-            <span className="dash-card-title"><Calendar size={16} /> Jatuh Tempo dalam 7 Hari</span>
-            <button className="dash-link" onClick={() => router.push('/pembayaran')}>Lihat Semua</button>
-          </div>
-          <div className="dash-table-wrap">
-            <table className="dash-table">
-              <thead>
-                <tr>
-                  <th>Kamar</th>
-                  <th>Nama</th>
-                  <th>Tanggal</th>
-                  <th>Nominal</th>
-                  <th>Sisa</th>
-                </tr>
-              </thead>
-              <tbody>
-                {upcomingBills.length === 0 ? (
-                  <tr><td colSpan={5} className="dash-empty">Tidak ada tagihan jatuh tempo</td></tr>
-                ) : upcomingBills.map((b: any) => (
-                  <tr key={b.id}>
-                    <td>{b.tenant?.room?.name || '-'}</td>
-                    <td>{b.tenant?.fullName || '-'}</td>
-                    <td>{b.dueDate ? new Date(b.dueDate).toLocaleDateString('id-ID') : '-'}</td>
-                    <td className="td-nominal">{formatRp(b.amount)}</td>
-                    <td><span className="badge badge-warning">Belum</span></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+      {(activeTab === 'ringkasan' || activeTab === 'tagihan' || activeTab === 'kamar') && (
+        <div className="dash-row" style={{ gridTemplateColumns: activeTab !== 'ringkasan' ? '1fr' : undefined }}>
+          {/* Jatuh Tempo in 7 Hari — left 60% */}
+          {(activeTab === 'ringkasan' || activeTab === 'tagihan') && (
+            <div className="dash-card dash-card-wide">
+              <div className="dash-card-header">
+                <span className="dash-card-title"><Calendar size={16} /> Jatuh Tempo dalam 7 Hari</span>
+                <button className="dash-link" onClick={() => router.push('/tagihan')}>Lihat Semua</button>
+              </div>
+              <div className="dash-table-wrap">
+                <table className="dash-table">
+                  <thead>
+                    <tr>
+                      <th>Kamar</th>
+                      <th>Nama</th>
+                      <th>Tanggal</th>
+                      <th>Nominal</th>
+                      <th>Sisa</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {upcomingBills.length === 0 ? (
+                      <tr><td colSpan={5} className="dash-empty">Tidak ada tagihan jatuh tempo</td></tr>
+                    ) : upcomingBills.map((b: any) => (
+                      <tr key={b.id}>
+                        <td>{b.tenant?.room?.name || '-'}</td>
+                        <td>{b.tenant?.fullName || '-'}</td>
+                        <td>{b.dueDate ? new Date(b.dueDate).toLocaleDateString('id-ID') : '-'}</td>
+                        <td className="td-nominal">{formatRp(b.amount)}</td>
+                        <td><span className="badge badge-warning">Belum</span></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
 
-        {/* Status Kamar Donut — right 40% */}
-        <div className="dash-card dash-card-narrow">
-          <div className="dash-card-header">
-            <span className="dash-card-title"><Home size={16} /> Status Kamar</span>
-          </div>
-          <div className="dash-donut-wrap">
-            {(() => {
-              const total = totalKamar || 1;
-              const occupiedPct = (occupied / total) * 100;
-              const emptyPct = (empty / total) * 100;
-              const overduePct = (overdueRooms / total) * 100;
-              const r = 46, cx = 60, cy = 60, circ = 2 * Math.PI * r;
-              const segs = [
-                { pct: occupiedPct, color: '#10B981', label: 'Terisi' },
-                { pct: emptyPct, color: '#94A3B8', label: 'Kosong' },
-                { pct: overduePct, color: '#EF4444', label: 'Menunggak' },
-              ].filter(s => s.pct > 0);
-              let off = 0;
-              return (
-                <div className="dash-donut-container">
-                  <div className="dash-donut-chart">
-                    <svg viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)' }}>
-                      <circle cx={cx} cy={cy} r={r} fill="none" stroke="#E5E7EB" strokeWidth="10" />
-                      {segs.map((s, i) => {
-                        const dash = (s.pct / 100) * circ;
-                        const cur = off; off += s.pct;
-                        return (
-                          <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={s.color}
-                            strokeWidth="10" strokeDasharray={`${dash} ${circ - dash}`}
-                            strokeDashoffset={-cur * circ / 100} strokeLinecap="round" />
-                        );
-                      })}
-                    </svg>
-                    <div className="dash-donut-center">
-                      <span className="dash-donut-num">{totalKamar}</span>
-                      <span className="dash-donut-label">Total</span>
+          {/* Status Kamar Donut — right 40% */}
+          {(activeTab === 'ringkasan' || activeTab === 'kamar') && (
+            <div className="dash-card dash-card-narrow">
+              <div className="dash-card-header">
+                <span className="dash-card-title"><Home size={16} /> Status Kamar</span>
+              </div>
+              <div className="dash-donut-wrap">
+                {(() => {
+                  const total = totalKamar || 1;
+                  const occupiedPct = (occupied / total) * 100;
+                  const emptyPct = (empty / total) * 100;
+                  const overduePct = (overdueRooms / total) * 100;
+                  const r = 46, cx = 60, cy = 60, circ = 2 * Math.PI * r;
+                  const segs = [
+                    { pct: occupiedPct, color: '#10B981', label: 'Terisi' },
+                    { pct: emptyPct, color: '#94A3B8', label: 'Kosong' },
+                    { pct: overduePct, color: '#EF4444', label: 'Menunggak' },
+                  ].filter(s => s.pct > 0);
+                  let off = 0;
+                  return (
+                    <div className="dash-donut-container">
+                      <div className="dash-donut-chart">
+                        <svg viewBox="0 0 120 120" style={{ transform: 'rotate(-90deg)' }}>
+                          <circle cx={cx} cy={cy} r={r} fill="none" stroke="#E5E7EB" strokeWidth="10" />
+                          {segs.map((s, i) => {
+                            const dash = (s.pct / 100) * circ;
+                            const cur = off; off += s.pct;
+                            return (
+                              <circle key={i} cx={cx} cy={cy} r={r} fill="none" stroke={s.color}
+                                strokeWidth="10" strokeDasharray={`${dash} ${circ - dash}`}
+                                strokeDashoffset={-cur * circ / 100} strokeLinecap="round" />
+                            );
+                          })}
+                        </svg>
+                        <div className="dash-donut-center">
+                          <span className="dash-donut-num">{totalKamar}</span>
+                          <span className="dash-donut-label">Total</span>
+                        </div>
+                      </div>
+                      <div className="dash-donut-legend">
+                        {segs.map((s, i) => (
+                          <div key={i} className="dash-donut-legend-item">
+                            <span className="legend-dot" style={{ background: s.color }} />
+                            <span className="legend-label">{s.label}</span>
+                            <span className="legend-pct">{Math.round(s.pct)}%</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── ROW 2: Unpaid Tenants + Electricity Token ── */}
+      {(activeTab === 'ringkasan' || activeTab === 'penghuni' || activeTab === 'listrik') && (
+        <div className="dash-row" style={{ gridTemplateColumns: activeTab !== 'ringkasan' ? '1fr' : undefined }}>
+          {/* Penghuni Belum Bayar — left 60% */}
+          {(activeTab === 'ringkasan' || activeTab === 'penghuni') && (
+            <div className="dash-card dash-card-wide">
+              <div className="dash-card-header">
+                <span className="dash-card-title"><AlertTriangle size={16} color="#F59E0B" /> Penghuni Belum Bayar</span>
+                <button className="dash-link" onClick={() => router.push('/tagihan')}>Lihat Semua</button>
+              </div>
+              <div className="dash-table-wrap">
+                <table className="dash-table">
+                  <thead>
+                    <tr>
+                      <th>Kamar</th>
+                      <th>Nama</th>
+                      <th>Nominal</th>
+                      <th>Jatuh Tempo</th>
+                      <th>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {unpaidBills.length === 0 ? (
+                      <tr><td colSpan={5} className="dash-empty">Semua tagihan lunas 🎉</td></tr>
+                    ) : unpaidBills.map((b: any) => (
+                      <tr key={b.id}>
+                        <td>{b.tenant?.room?.name || '-'}</td>
+                        <td>{b.tenant?.fullName || '-'}</td>
+                        <td className="td-nominal">{formatRp(b.amount)}</td>
+                        <td>{b.dueDate ? new Date(b.dueDate).toLocaleDateString('id-ID') : '-'}</td>
+                        <td>
+                          <button className="btn btn-sm btn-outline" onClick={() => router.push('/tagihan')}>
+                            Bayar
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Listrik Token — right 40% */}
+          {(activeTab === 'ringkasan' || activeTab === 'listrik') && (
+            <div className="dash-card dash-card-electric">
+              <div className="dash-card-header">
+                <span className="dash-card-title"><Zap size={16} color="#D97706" /> Listrik Token</span>
+                <button className="dash-link" onClick={() => router.push('/monitoring-listrik')}>Detail →</button>
+              </div>
+              <div className="electric-body">
+                <div className="electric-left">
+                  <span className="electric-label">Sisa Token</span>
+                  <span className="electric-kwh">{stats.latestElectricity?.currentKwh?.toFixed(2) ?? '0.00'} kWh</span>
+                  <div className="electric-progress-wrap">
+                    <div className="electric-progress-bg">
+                      <div className="electric-progress-fill" style={{ width: Math.min(stats.latestElectricity?.currentKwh ?? 0, 100) + '%' }} />
                     </div>
                   </div>
-                  <div className="dash-donut-legend">
-                    {segs.map((s, i) => (
-                      <div key={i} className="dash-donut-legend-item">
-                        <span className="legend-dot" style={{ background: s.color }} />
-                        <span className="legend-label">{s.label}</span>
-                        <span className="legend-pct">{Math.round(s.pct)}%</span>
-                      </div>
-                    ))}
+                  <div className="electric-info">
+                    <span className="electric-info-label">Terakhir isi:</span>
+                    <span>{stats.latestElectricity?.topupDate ? new Date(stats.latestElectricity.topupDate).toLocaleDateString('id-ID') : '-'}</span>
+                  </div>
+                  <div className="electric-info">
+                    <span className="electric-info-label">Nominal:</span>
+                    <span>{stats.latestElectricity?.nominal ? formatRp(stats.latestElectricity.nominal) : '-'}</span>
+                  </div>
+                </div>
+                <div className="electric-right">
+                  <span className="electric-label">Perkiraan habis</span>
+                  <span className="electric-days">{stats.latestElectricity?.estimatedDaysLeft ?? '-'} hari</span>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── ROW 3: Kamar Grid ── */}
+      {(activeTab === 'ringkasan' || activeTab === 'kamar') && (
+        <div className="dash-card dash-card-full" style={{ marginTop: activeTab !== 'ringkasan' ? 0 : 20 }}>
+          <div className="dash-card-header">
+            <span className="dash-card-title"><BedDouble size={16} /> Grid Kamar</span>
+            <button className="btn btn-primary btn-sm" onClick={() => router.push('/kamar')}>
+              Kelola Kamar <ArrowRight size={14} />
+            </button>
+          </div>
+          <div className="dash-room-grid">
+            {rooms.length === 0 ? (
+              <div className="dash-empty">Belum ada kamar</div>
+            ) : rooms.slice(0, 12).map((r: any) => {
+              const statusColor =
+                r.status === 'terisi' ? '#10B981' :
+                r.status === 'menunggak' ? '#EF4444' : '#E5E7EB';
+              const statusLabel =
+                r.status === 'terisi' ? 'Terisi' :
+                r.status === 'menunggak' ? 'Menunggak' : 'Kosong';
+              return (
+                <div key={r.id} className="dash-room-card">
+                  <div className="dash-room-status-bar" style={{ background: statusColor }} />
+                  <div className="dash-room-body">
+                    <span className="dash-room-name">{r.name}</span>
+                    <span className="dash-room-price">{formatRp(r.price)}</span>
+                    <span className="dash-room-status-label" style={{ color: statusColor }}>{statusLabel}</span>
                   </div>
                 </div>
               );
-            })()}
+            })}
           </div>
         </div>
-      </div>
-
-      {/* ── ROW 2: Unpaid Tenants + Electricity Token ── */}
-      <div className="dash-row">
-        {/* Penghuni Belum Bayar — left 60% */}
-        <div className="dash-card dash-card-wide">
-          <div className="dash-card-header">
-            <span className="dash-card-title"><AlertTriangle size={16} color="#F59E0B" /> Penghuni Belum Bayar</span>
-            <button className="dash-link" onClick={() => router.push('/tagihan')}>Lihat Semua</button>
-          </div>
-          <div className="dash-table-wrap">
-            <table className="dash-table">
-              <thead>
-                <tr>
-                  <th>Kamar</th>
-                  <th>Nama</th>
-                  <th>Nominal</th>
-                  <th>Jatuh Tempo</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody>
-                {unpaidBills.length === 0 ? (
-                  <tr><td colSpan={5} className="dash-empty">Semua tagihan lunas 🎉</td></tr>
-                ) : unpaidBills.map((b: any) => (
-                  <tr key={b.id}>
-                    <td>{b.tenant?.room?.name || '-'}</td>
-                    <td>{b.tenant?.fullName || '-'}</td>
-                    <td className="td-nominal">{formatRp(b.amount)}</td>
-                    <td>{b.dueDate ? new Date(b.dueDate).toLocaleDateString('id-ID') : '-'}</td>
-                    <td>
-                      <button className="btn btn-sm btn-outline" onClick={() => router.push('/tagihan')}>
-                        Bayar
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        {/* Listrik Token — right 40% */}
-        <div className="dash-card dash-card-electric">
-          <div className="dash-card-header">
-            <span className="dash-card-title"><Zap size={16} color="#D97706" /> Listrik Token</span>
-            <button className="dash-link" onClick={() => router.push('/monitoring-listrik')}>Detail →</button>
-          </div>
-          <div className="electric-body">
-            <div className="electric-left">
-              <span className="electric-label">Sisa Token</span>
-              <span className="electric-kwh">{stats.latestElectricity?.currentKwh?.toFixed(2) ?? '0.00'} kWh</span>
-              <div className="electric-progress-wrap">
-                <div className="electric-progress-bg">
-                  <div className="electric-progress-fill" style={{ width: Math.min(stats.latestElectricity?.currentKwh ?? 0, 100) + '%' }} />
-                </div>
-              </div>
-              <div className="electric-info">
-                <span className="electric-info-label">Terakhir isi:</span>
-                <span>{stats.latestElectricity?.topupDate ? new Date(stats.latestElectricity.topupDate).toLocaleDateString('id-ID') : '-'}</span>
-              </div>
-              <div className="electric-info">
-                <span className="electric-info-label">Nominal:</span>
-                <span>{stats.latestElectricity?.nominal ? formatRp(stats.latestElectricity.nominal) : '-'}</span>
-              </div>
-            </div>
-            <div className="electric-right">
-              <span className="electric-label">Perkiraan habis</span>
-              <span className="electric-days">{stats.latestElectricity?.estimatedDaysLeft ?? '-'} hari</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ── ROW 3: Kamar Grid ── */}
-      <div className="dash-card dash-card-full">
-        <div className="dash-card-header">
-          <span className="dash-card-title"><BedDouble size={16} /> Grid Kamar</span>
-          <button className="btn btn-primary btn-sm" onClick={() => router.push('/kamar')}>
-            Kelola Kamar <ArrowRight size={14} />
-          </button>
-        </div>
-        <div className="dash-room-grid">
-          {rooms.length === 0 ? (
-            <div className="dash-empty">Belum ada kamar</div>
-          ) : rooms.slice(0, 12).map((r: any) => {
-            const statusColor =
-              r.status === 'terisi' ? '#10B981' :
-              r.status === 'menunggak' ? '#EF4444' : '#E5E7EB';
-            const statusLabel =
-              r.status === 'terisi' ? 'Terisi' :
-              r.status === 'menunggak' ? 'Menunggak' : 'Kosong';
-            return (
-              <div key={r.id} className="dash-room-card">
-                <div className="dash-room-status-bar" style={{ background: statusColor }} />
-                <div className="dash-room-body">
-                  <span className="dash-room-name">{r.name}</span>
-                  <span className="dash-room-price">{formatRp(r.price)}</span>
-                  <span className="dash-room-status-label" style={{ color: statusColor }}>{statusLabel}</span>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      )}
     </DashboardLayout>
   );
 }
