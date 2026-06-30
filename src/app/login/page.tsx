@@ -123,7 +123,6 @@ export default function LoginPage() {
               />
             </div>
           </div>
-
           <button type="submit" disabled={loading} className="login-btn">
             {loading ? (
               <span className="spinner" />
@@ -134,6 +133,25 @@ export default function LoginPage() {
               </>
             )}
           </button>
+
+          <div style={{ textAlign: 'center', marginTop: 16 }}>
+            <a 
+              href="https://ammang.my.id" 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              style={{
+                fontSize: 13,
+                color: '#64748b',
+                textDecoration: 'none',
+                transition: 'color 0.2s',
+                fontWeight: 500
+              }}
+              onMouseOver={(e) => e.currentTarget.style.color = 'var(--primary, #4f46e5)'}
+              onMouseOut={(e) => e.currentTarget.style.color = '#64748b'}
+            >
+              Lupa Password? Hubungi Developer
+            </a>
+          </div>
         </form>
 
         {/* Developer Credit */}
