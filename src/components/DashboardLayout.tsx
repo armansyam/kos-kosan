@@ -179,7 +179,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         onClick={() => setShowDevOverlay(!showDevOverlay)}
         title="Developer Info"
       >
-        <span style={{ fontWeight: 800, fontSize: '15px', letterSpacing: '-0.5px' }}>AMS</span>
+        <img 
+          src="/ams-logo.png" 
+          alt="AMS Logo" 
+          style={{ width: '38px', height: '38px', objectFit: 'contain' }} 
+        />
       </div>
 
       {showDevOverlay && (
@@ -192,8 +196,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
             </div>
           </div>
           <div>
-            <h4 style={{ margin: 0, fontSize: '15px', color: '#1e293b', fontWeight: 700 }}>AMS</h4>
-            <p style={{ margin: '4px 0 0 0', fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
+            <img 
+              src="/ams-logo.png" 
+              alt="AMS Logo" 
+              style={{ height: '36px', objectFit: 'contain', marginBottom: '8px', display: 'block' }} 
+            />
+            <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
               Designed, built, and optimized with Next.js, Prisma, and custom styling.
             </p>
           </div>
