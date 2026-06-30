@@ -117,6 +117,7 @@ model Setting {
   colorUtama   String   @default("#4F46E5") @map("color_utama")
   colorSidebar String   @default("#0F172A") @map("color_sidebar")
   rekening     String   @default("")
+  fasilitas    String   @default("WiFi Gratis,Parkir Luas,Keamanan 24 Jam,Air Bersih,Listrik Termasuk,Bersih & Nyaman")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("settings")

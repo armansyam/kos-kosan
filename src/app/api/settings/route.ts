@@ -47,6 +47,7 @@ export async function POST(request: Request) {
       colorUtama,
       colorSidebar,
       rekening,
+      fasilitas,
     } = body;
 
     let setting = await prisma.setting.findFirst();
@@ -67,6 +68,7 @@ export async function POST(request: Request) {
           colorUtama,
           colorSidebar,
           rekening,
+          fasilitas,
         },
       });
     } else {
@@ -86,6 +88,7 @@ export async function POST(request: Request) {
           colorUtama,
           colorSidebar,
           rekening,
+          fasilitas,
         },
       });
     }

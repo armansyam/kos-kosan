@@ -17,6 +17,7 @@ export default function PengaturanPage() {
     colorUtama: "#4F46E5",
     colorSidebar: "#0F172A",
     rekening: "",
+    fasilitas: "WiFi Gratis,Parkir Luas,Keamanan 24 Jam,Air Bersih,Listrik Termasuk,Bersih & Nyaman",
   });
 
   const [logo, setLogo] = useState<string | null>(null);
@@ -41,6 +42,7 @@ export default function PengaturanPage() {
             colorUtama: data.colorUtama || "#4F46E5",
             colorSidebar: data.colorSidebar || "#0F172A",
             rekening: data.rekening || "",
+            fasilitas: data.fasilitas || "WiFi Gratis,Parkir Luas,Keamanan 24 Jam,Air Bersih,Listrik Termasuk,Bersih & Nyaman",
           });
           if (data.logo) {
             setLogo(data.logo);
@@ -244,7 +246,7 @@ export default function PengaturanPage() {
               <h3>Tampilan Landing Page</h3>
             </div>
             <div className="card-body">
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom: 16 }}>
                 <div>
                   <label style={labelStyle}>Warna Utama</label>
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -259,6 +261,19 @@ export default function PengaturanPage() {
                     <span style={{ fontSize:13, color:'var(--text-secondary)' }}>{profile.colorSidebar}</span>
                   </div>
                 </div>
+              </div>
+              <div style={{ borderTop: '1px solid #f1f5f9', paddingTop: 16 }}>
+                <label style={labelStyle}>Daftar Fasilitas Kos (Pisahkan dengan koma)</label>
+                <textarea 
+                  rows={2} 
+                  value={profile.fasilitas} 
+                  onChange={e => setProfile(p => ({...p, fasilitas: e.target.value}))} 
+                  style={{...inputStyle, resize:'vertical'}}
+                  placeholder="WiFi Gratis, Parkir Luas, Keamanan 24 Jam, Air Bersih, Listrik Termasuk, Bersih & Nyaman" 
+                />
+                <p style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 8 }}>
+                  Tuliskan fasilitas kos Anda dipisahkan dengan tanda koma (e.g. WiFi Gratis, AC, Kamar Mandi Dalam). Sistem akan otomatis mencocokkan kata kunci dengan ikon yang sesuai.
+                </p>
               </div>
             </div>
           </div>

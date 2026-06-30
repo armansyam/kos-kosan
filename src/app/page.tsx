@@ -43,14 +43,29 @@ export default function LandingPage() {
     return 'Rp' + n.toLocaleString('id-ID');
   }
 
-  const facilities = [
-    { icon: <Wifi size={22} />, name: 'WiFi Gratis' },
-    { icon: <Car size={22} />, name: 'Parkir Luas' },
-    { icon: <ShieldCheck size={22} />, name: 'Keamanan 24 Jam' },
-    { icon: <Droplets size={22} />, name: 'Air Bersih' },
-    { icon: <Zap size={22} />, name: 'Listrik Termasuk' },
-    { icon: <Building2 size={22} />, name: 'Bersih & Nyaman' },
-  ];
+  // Dynamic parsing of facilities from DB settings
+  const rawFacilities = settings?.fasilitas || "WiFi Gratis,Parkir Luas,Keamanan 24 Jam,Air Bersih,Listrik Termasuk,Bersih & Nyaman";
+  const facilities = rawFacilities.split(',').map((f: string) => {
+    const name = f.trim();
+    const nameLower = name.toLowerCase();
+    
+    let icon = <CheckCircle size={22} />; // fallback
+    if (nameLower.includes('wifi') || nameLower.includes('internet')) {
+      icon = <Wifi size={22} />;
+    } else if (nameLower.includes('parkir') || nameLower.includes('mobil') || nameLower.includes('motor') || nameLower.includes('kendaraan')) {
+      icon = <Car size={22} />;
+    } else if (nameLower.includes('aman') || nameLower.includes('security') || nameLower.includes('keamanan') || nameLower.includes('cctv') || nameLower.includes('penjaga')) {
+      icon = <ShieldCheck size={22} />;
+    } else if (nameLower.includes('air') || nameLower.includes('pam') || nameLower.includes('water') || nameLower.includes('droplet')) {
+      icon = <Droplets size={22} />;
+    } else if (nameLower.includes('listrik') || nameLower.includes('pln') || nameLower.includes('token') || nameLower.includes('daya')) {
+      icon = <Zap size={22} />;
+    } else if (nameLower.includes('bersih') || nameLower.includes('nyaman') || nameLower.includes('cuci') || nameLower.includes('cleaning') || nameLower.includes('ruang') || nameLower.includes('dapur') || nameLower.includes('kasur')) {
+      icon = <Building2 size={22} />;
+    }
+
+    return { icon, name };
+  });
 
   return (
     <div className="landing-page">
