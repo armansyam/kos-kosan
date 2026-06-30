@@ -181,64 +181,128 @@ export default function PenghuniPage() {
           {loading ? (
             <div style={{ textAlign:'center', padding:60 }}><div className="spinner" style={{ borderTopColor:'var(--primary)', width:40, height:40, margin:'0 auto' }} /></div>
           ) : (
-            <div className="card">
-              <div className="table-container">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Nama</th><th>WhatsApp</th><th>Kamar</th>
-                      <th>Check-in</th><th>Harga/Bln</th><th>Jatuh Tempo</th>
-                      <th>Status</th><th style={{ textAlign:'right' }}>Aksi</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {displayTenants.map(tenant => (
-                      <tr key={tenant.id} onClick={() => setSelectedTenant(tenant)} style={{ cursor:'pointer', background: selectedTenant?.id===tenant.id ? '#F0F4FF' : undefined }}>
-                        <td>
-                          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                            <div style={{ width:34, height:34, borderRadius:'50%', background: tenant.active ? 'linear-gradient(135deg, var(--primary), var(--primary-light))' : '#ccc', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:14, fontWeight:700, flexShrink:0 }}>
-                              {tenant.fullName.charAt(0)}
-                            </div>
-                            <strong style={{ color: tenant.active ? undefined : 'var(--text-secondary)' }}>{tenant.fullName}</strong>
-                          </div>
-                        </td>
-                        <td style={{ fontSize:13 }}>{tenant.whatsapp}</td>
-                        <td><strong>{tenant.room.name}</strong></td>
-                        <td style={{ fontSize:13 }}>{new Date(tenant.checkInDate).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</td>
-                        <td>{formatRp(tenant.monthlyPrice)}</td>
-                        <td>
-                          {tenant.checkOutDate 
-                            ? <span style={{ fontSize:12, color:'var(--text-secondary)' }}>Keluar {new Date(tenant.checkOutDate).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})}</span>
-                            : `Tgl ${tenant.dueDate}`
-                          }
-                        </td>
-                        <td>
-                          <span className={`badge ${tenant.active ? 'badge-success' : 'badge-gray'}`}>
-                            {tenant.active ? 'Aktif' : 'Sudah Keluar'}
+            <div className="room-groups-list">
+              <div className="dash-room-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+                {displayTenants.map(tenant => {
+                  const cardColor = tenant.active ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)' : '#94A3B8';
+                  
+                  return (
+                    <div 
+                      key={tenant.id}
+                      onClick={() => setSelectedTenant(tenant)}
+                      className={`dash-room-card ${selectedTenant?.id === tenant.id ? 'active-room-card' : ''}`}
+                      style={{
+                        background: 'white',
+                        borderRadius: '16px',
+                        border: selectedTenant?.id === tenant.id ? '2px solid var(--primary)' : '1px solid var(--border)',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
+                    >
+                      {/* Color Bar / Status bar */}
+                      <div style={{ height: '6px', background: cardColor }} />
+                      
+                      {/* Card Body */}
+                      <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                        {/* Header Info */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+                          <span style={{
+                            background: tenant.active ? '#eef2ff' : '#f1f5f9',
+                            color: tenant.active ? 'var(--primary)' : '#475569',
+                            fontSize: '14px',
+                            fontWeight: 800,
+                            padding: '4px 12px',
+                            borderRadius: '8px',
+                            border: tenant.active ? '1px solid #e0e7ff' : '1px solid #e2e8f0'
+                          }}>
+                            Kamar {tenant.room.name}
                           </span>
-                        </td>
-                        <td onClick={e=>e.stopPropagation()}>
-                          <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
-                            <button onClick={() => openWhatsApp(tenant.whatsapp, tenant.fullName)} className="btn btn-whatsapp btn-sm" title="WhatsApp">
-                              <MessageCircle size={14} />
-                            </button>
-                            {tenant.active && <button onClick={() => openEdit(tenant)} className="btn btn-outline btn-sm"><Edit size={14} /></button>}
-                            {tenant.active 
-                              ? <button onClick={() => handleCheckout(tenant)} className="btn btn-danger btn-sm" title="Checkout"><LogOut size={14} /></button>
-                              : <button onClick={() => handleDelete(tenant.id)} className="btn btn-danger btn-sm" title="Hapus permanen"><Trash2 size={14} /></button>
-                            }
+                          <span className={`badge ${tenant.active ? 'badge-success' : 'badge-gray'}`}>
+                            {tenant.active ? 'Aktif' : 'Keluar'}
+                          </span>
+                        </div>
+
+                        {/* Tenant Name */}
+                        <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 12px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                          <div style={{
+                            width: '28px',
+                            height: '28px',
+                            borderRadius: '50%',
+                            background: tenant.active ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)' : '#94A3B8',
+                            color: 'white',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '12px',
+                            fontWeight: 700,
+                            flexShrink: 0
+                          }}>
+                            {tenant.fullName.charAt(0)}
                           </div>
-                        </td>
-                      </tr>
-                    ))}
-                    {displayTenants.length===0 && (
-                      <tr><td colSpan={8} style={{ textAlign:'center', padding:32, color:'var(--text-light)' }}>
-                        {showInactive ? 'Belum ada penghuni yang keluar' : 'Belum ada penghuni aktif'}
-                      </td></tr>
-                    )}
-                  </tbody>
-                </table>
+                          {tenant.fullName}
+                        </h4>
+
+                        {/* Tenant Details */}
+                        <div style={{ fontSize: '13px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px', flex: 1 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#94a3b8' }}>WhatsApp</span>
+                            <span style={{ fontWeight: 500 }}>{tenant.whatsapp}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#94a3b8' }}>Harga / Bulan</span>
+                            <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{formatRp(tenant.monthlyPrice)}</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#94a3b8' }}>Jatuh Tempo</span>
+                            <span style={{ fontWeight: 500 }}>
+                              {tenant.checkOutDate 
+                                ? `Keluar ${new Date(tenant.checkOutDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}`
+                                : `Tgl ${tenant.dueDate}`
+                              }
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Action buttons footer */}
+                        <div onClick={(e) => e.stopPropagation()} style={{
+                          display: 'flex',
+                          gap: '8px',
+                          justifyContent: 'flex-end',
+                          borderTop: '1px solid #f1f5f9',
+                          paddingTop: '12px'
+                        }}>
+                          <button onClick={() => openWhatsApp(tenant.whatsapp, tenant.fullName)} className="btn btn-whatsapp btn-sm" title="WhatsApp" style={{ padding: '6px 10px' }}>
+                            <MessageCircle size={14} />
+                          </button>
+                          {tenant.active && (
+                            <button onClick={() => openEdit(tenant)} className="btn btn-outline btn-sm" style={{ padding: '6px 10px' }}>
+                              <Edit size={14} />
+                            </button>
+                          )}
+                          {tenant.active ? (
+                            <button onClick={() => handleCheckout(tenant)} className="btn btn-danger btn-sm" title="Keluar" style={{ padding: '6px 10px' }}>
+                              <LogOut size={14} />
+                            </button>
+                          ) : (
+                            <button onClick={() => handleDelete(tenant.id)} className="btn btn-danger btn-sm" title="Hapus Permanen" style={{ padding: '6px 10px' }}>
+                              <Trash2 size={14} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
+              {displayTenants.length === 0 && (
+                <div className="card" style={{ textAlign:'center', padding:32, color:'var(--text-light)' }}>
+                  {showInactive ? 'Belum ada penghuni yang keluar' : 'Belum ada penghuni aktif'}
+                </div>
+              )}
             </div>
           )}
         </div>
