@@ -117,6 +117,21 @@ export default function LoginPage() {
             )}
           </button>
         </form>
+
+        {/* Developer Credit */}
+        <div style={{ marginTop: 24, textAlign: 'center', fontSize: 12, color: '#94a3b8' }}>
+          <span>Developed by </span>
+          <a 
+            href="https://github.com/armansyam" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            style={{ color: 'var(--primary, #4f46e5)', fontWeight: 600, textDecoration: 'none', transition: 'color 0.2s' }}
+            onMouseOver={(e) => e.currentTarget.style.color = 'var(--primary-dark)'}
+            onMouseOut={(e) => e.currentTarget.style.color = 'var(--primary)'}
+          >
+            AMS
+          </a>
+        </div>
       </div>
     </div>
   );
