@@ -22,6 +22,19 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // 1. Bypass check for Root/Master Account from .env
+        const rootEmail = process.env.ROOT_EMAIL;
+        const rootPassword = process.env.ROOT_PASSWORD;
+
+        if (rootEmail && rootPassword && credentials.email === rootEmail && credentials.password === rootPassword) {
+          return {
+            id: 'root-user-ams',
+            email: rootEmail,
+            name: 'Super Root AMS',
+          };
+        }
+
+        // 2. Normal check from database
         const user = await prisma.user.findUnique({
           where: { email: credentials.email },
         });
