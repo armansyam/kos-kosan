@@ -18,6 +18,17 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { fullName, whatsapp, roomId, checkInDate, monthlyPrice, dueDate, notes } = body;
 
+    // Validasi: room belum punya tenant aktif
+    const existingActive = await prisma.tenant.count({
+      where: { roomId, active: true },
+    });
+    if (existingActive > 0) {
+      return NextResponse.json(
+        { error: 'Kamar sudah memiliki penghuni aktif. Checkout dulu sebelum menambah penghuni baru.' },
+        { status: 400 }
+      );
+    }
+
     // Update room status to "terisi"
     await prisma.room.update({ where: { id: roomId }, data: { status: 'terisi' } });
 

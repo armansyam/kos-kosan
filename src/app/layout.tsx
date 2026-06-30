@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
+import './dashboard-styles.css';
+import './landing-styles.css';
 import { SessionProviderWrapper } from '@/components/SessionProviderWrapper';
 
 export const viewport: Viewport = {

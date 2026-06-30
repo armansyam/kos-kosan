@@ -18,19 +18,22 @@ interface Tenant { id: string; fullName: string; monthlyPrice: number; dueDate: 
 type TabType = 'semua' | 'belum_bayar' | 'lunas' | 'menunggak';
 
 export default function TagihanPage() {
+  const today = new Date();
+  const currentMonth = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+
   const [bills, setBills] = useState<Bill[]>([]);
   const [tenants, setTenants] = useState<Tenant[]>([]);
   const [tab, setTab] = useState<TabType>('semua');
   const [showModal, setShowModal] = useState(false);
   const [showPayModal, setShowPayModal] = useState<Bill | null>(null);
   const [showDetailModal, setShowDetailModal] = useState<Bill | null>(null);
+  const [showAutoModal, setShowAutoModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState({ tenantId: '', month: '', amount: 0, dueDate: '' });
   const [payForm, setPayForm] = useState({ paymentDate: '', paymentMethod: 'transfer', amount: 0, notes: '' });
+  const [autoForm, setAutoForm] = useState({ month: currentMonth });
+  const [autoGenerating, setAutoGenerating] = useState(false);
   const [toast, setToast] = useState('');
-
-  const today = new Date();
-  const currentMonth = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -40,6 +43,30 @@ export default function TagihanPage() {
     setBills(Array.isArray(b) ? b : []);
     setTenants(Array.isArray(t) ? t : []);
     setLoading(false);
+  }
+
+  async function handleAutoGenerate(e: React.FormEvent) {
+    e.preventDefault();
+    setAutoGenerating(true);
+    try {
+      const res = await fetch('/api/bills/auto-generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(autoForm),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast(data.message || 'Tagihan otomatis berhasil dibuat');
+        setShowAutoModal(false);
+        fetchAll();
+      } else {
+        showToast(data.error || 'Gagal membuat tagihan otomatis');
+      }
+    } catch {
+      showToast('Error koneksi');
+    } finally {
+      setAutoGenerating(false);
+    }
   }
 
   async function handleCreate(e: React.FormEvent) {
@@ -116,6 +143,9 @@ export default function TagihanPage() {
           <p style={{ fontSize:13, color:'var(--text-secondary)', marginTop:2 }}>Kelola tagihan bulanan penghuni kos</p>
         </div>
         <div style={{ display:'flex', gap:10 }}>
+          <button onClick={() => { setAutoForm({ month: currentMonth }); setShowAutoModal(true); }} className="btn btn-outline" style={{ display:'flex', alignItems:'center', gap:6 }}>
+            ⚡ Tagihan Otomatis
+          </button>
           <button onClick={() => { setForm({ tenantId:'', month:currentMonth, amount:0, dueDate:'' }); setShowModal(true); }} className="btn btn-primary">
             <Plus size={16} /> Buat Tagihan
           </button>
@@ -362,6 +392,35 @@ export default function TagihanPage() {
               <button className="btn btn-whatsapp" onClick={() => openWhatsApp(showDetailModal)}><MessageCircle size={16} /> Kirim WA</button>
               <button className="btn btn-outline" onClick={() => setShowDetailModal(null)}>Tutup</button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL AUTO GENERATE */}
+      {showAutoModal && (
+        <div className="modal-overlay" onClick={() => setShowAutoModal(false)}>
+          <div className="modal modal-mobile" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>⚡ Generate Tagihan Otomatis</h3>
+              <button className="modal-close" onClick={() => setShowAutoModal(false)}>✕</button>
+            </div>
+            <form onSubmit={handleAutoGenerate}>
+              <div className="modal-body">
+                <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 16 }}>
+                  Sistem akan otomatis membuat tagihan bulanan untuk seluruh penghuni yang aktif pada bulan yang dipilih (jika belum ada).
+                </p>
+                <div className="form-group">
+                  <label>Pilih Bulan (YYYY-MM)</label>
+                  <input className="form-input" type="month" value={autoForm.month} onChange={e => setAutoForm({ month: e.target.value })} required />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-outline" onClick={() => setShowAutoModal(false)}>Batal</button>
+                <button type="submit" disabled={autoGenerating} className="btn btn-primary" style={{ background: '#f59e0b', borderColor: '#f59e0b', color: '#fff' }}>
+                  {autoGenerating ? 'Memproses...' : '⚡ Generate Sekarang'}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

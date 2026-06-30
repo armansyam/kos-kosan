@@ -18,13 +18,18 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { nominal, kwhAdded, currentKwh, estimatedDaysLeft } = body;
 
+    // Default kwhAdded = nominal/1528 (tarif R1/1300)
+    const kwh = kwhAdded ?? Math.round((nominal / 1528) * 100) / 100;
+    // Default estimatedDaysLeft = currentKwh / (avg usage ~8kwh/day)
+    const days = estimatedDaysLeft ?? Math.round((currentKwh || 0) / 8);
+
     const log = await prisma.electricityLog.create({
       data: {
         topupDate: new Date(),
         nominal,
-        kwhAdded,
-        currentKwh,
-        estimatedDaysLeft,
+        kwhAdded: kwh,
+        currentKwh: currentKwh || 0,
+        estimatedDaysLeft: days,
       },
     });
     return NextResponse.json(log, { status: 201 });

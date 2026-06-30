@@ -29,7 +29,6 @@ const navItems = [
   { href: '/kamar', label: 'Kamar', icon: BedDouble },
   { href: '/penghuni', label: 'Penghuni', icon: Users },
   { href: '/tagihan', label: 'Tagihan', icon: Receipt },
-  { href: '/pembayaran', label: 'Pembayaran', icon: CreditCard },
   { href: '/monitoring-listrik', label: 'Listrik', icon: Zap },
   { href: '/pengeluaran', label: 'Pengeluaran', icon: Wallet },
   { href: '/laporan', label: 'Laporan', icon: FileText },
@@ -39,6 +38,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [settings, setSettings] = useState<any>(null);
+
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(data => {
+        if (data && !data.error) {
+          setSettings(data);
+          document.documentElement.style.setProperty('--primary', data.colorUtama || '#6366F1');
+          document.documentElement.style.setProperty('--primary-dark', (data.colorUtama || '#6366F1') + 'dd');
+          document.documentElement.style.setProperty('--sidebar-bg', data.colorSidebar || '#111827');
+        }
+      })
+      .catch(err => console.error(err));
+  }, []);
 
   useEffect(() => {
     setSidebarOpen(false);
@@ -65,11 +79,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
         {/* Brand */}
         <div className="sidebar-brand">
-          <div className="sidebar-brand-icon">
-            <Building2 size={20} />
+          <div className="sidebar-brand-icon" style={settings?.logo ? { background: `url(${settings.logo}) center/cover no-repeat` } : undefined}>
+            {!settings?.logo && <Building2 size={20} />}
           </div>
           <div>
-            <h2>A'aTHaRaZ</h2>
+            <h2>{settings?.namaKos || "A'aTHaRaZ"}</h2>
             <span>Admin Dashboard</span>
           </div>
         </div>

@@ -18,12 +18,21 @@ interface Room {
 export default function LandingPage() {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState(true);
+  const [settings, setSettings] = useState<any>(null);
 
   useEffect(() => {
-    fetch('/api/rooms')
-      .then(r => r.json())
-      .then(d => { setRooms(Array.isArray(d) ? d : []); setLoading(false); })
-      .catch(() => setLoading(false));
+    Promise.all([
+      fetch('/api/rooms').then(r => r.json()),
+      fetch('/api/settings').then(r => r.json())
+    ]).then(([rData, sData]) => {
+      setRooms(Array.isArray(rData) ? rData : []);
+      if (sData && !sData.error) {
+        setSettings(sData);
+        document.documentElement.style.setProperty('--primary', sData.colorUtama || '#4f46e5');
+        document.documentElement.style.setProperty('--primary-dark', (sData.colorUtama || '#4f46e5') + 'dd');
+      }
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, []);
 
   const availableRooms = rooms.filter(r => r.status === 'kosong');
@@ -53,11 +62,11 @@ export default function LandingPage() {
         {/* Nav */}
         <nav className="landing-nav">
           <div className="landing-brand">
-            <div className="landing-brand-icon">
-              <Building2 size={20} color="#fff" />
+            <div className="landing-brand-icon" style={settings?.logo ? { background: `url(${settings.logo}) center/cover no-repeat` } : undefined}>
+              {!settings?.logo && <Building2 size={20} color="#fff" />}
             </div>
             <div>
-              <div className="landing-brand-name">A&apos;aTHaRaZ</div>
+              <div className="landing-brand-name">{settings?.namaKos || "A'aTHaRaZ"}</div>
               <span className="landing-brand-tag">Kost Premium</span>
             </div>
           </div>
@@ -70,11 +79,10 @@ export default function LandingPage() {
         <div className="landing-hero-content">
           <div className="landing-badge">✨ Kos Premium Terbaik di Kota</div>
           <h1 className="landing-title">
-            Temukan Kamar Impian<br />Untuk Kenyamanan Anda
+            Temukan Kamar Impian Di<br />{settings?.namaKos || "A'aTHaRaZ"}
           </h1>
           <p className="landing-desc">
-            Kos-kosan modern dengan fasilitas lengkap, keamanan 24 jam, dan suasana
-            nyaman seperti rumah sendiri.
+            {settings?.deskripsi || "Kos-kosan modern dengan fasilitas lengkap, keamanan 24 jam, dan suasana nyaman seperti rumah sendiri."}
           </p>
 
           {/* Stats */}
@@ -100,11 +108,7 @@ export default function LandingPage() {
         <div className="container">
           <div className="section-header">
             <h2 className="section-title">Kamar Tersedia</h2>
-            <p className="section-desc">
-              {availableCount > 0
-                ? `Ada ${availableCount} kamar siap huni untuk Anda`
-                : 'Semua kamar sedang terisi, hubungi kami untuk daftar tunggu'}
-            </p>
+            <p className="section-desc">Informasi ketersediaan unit kamar terupdate saat ini</p>
           </div>
 
           {loading ? (
@@ -116,90 +120,39 @@ export default function LandingPage() {
               }} />
               <p>Memuat data kamar...</p>
             </div>
-          ) : availableRooms.length === 0 ? (
-            <div className="landing-empty">
-              <div className="landing-empty-icon">
-                <XCircle size={28} color="#dc2626" />
+          ) : (
+            <div className="landing-empty" style={{ maxWidth: 480, margin: '0 auto 40px', border: '1px solid #e2e8f0' }}>
+              <div style={{
+                width: 72,
+                height: 72,
+                borderRadius: '50%',
+                background: availableCount > 0 ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                color: availableCount > 0 ? '#22c55e' : '#ef4444',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                margin: '0 auto 20px',
+                fontSize: 28,
+                fontWeight: 800,
+                border: availableCount > 0 ? '2px solid #22c55e' : '2px solid #ef4444'
+              }}>
+                {availableCount}
               </div>
-              <h3 className="landing-empty-title">Semua Kamar Terisi</h3>
+              <h3 className="landing-empty-title">
+                {availableCount > 0 ? 'Kamar Siap Huni' : 'Kamar Kos Penuh'}
+              </h3>
               <p className="landing-empty-desc">
-                Untuk saat ini semua kamar sudah terisi. Silakan hubungi kami
-                untuk informasi kamar yang akan tersedia.
+                {availableCount > 0 
+                  ? `Saat ini tersedia ${availableCount} unit kamar kosong yang siap untuk Anda tempati.` 
+                  : 'Untuk saat ini seluruh kamar sedang terisi penuh. Silakan hubungi kami untuk masuk ke daftar antrean.'}
               </p>
               <a
-                href="https://wa.me/6281234567890"
+                href={`https://wa.me/${settings?.whatsapp || "6281234567890"}${availableCount > 0 ? "?text=Halo, saya tertarik memesan kamar kos yang masih tersedia." : "?text=Halo, saya ingin masuk daftar antrean kamar kos."}`}
                 target="_blank" rel="noopener noreferrer"
                 className="landing-btn-wa"
               >
-                <MessageCircle size={18} /> Hubungi via WhatsApp
+                <MessageCircle size={18} /> {availableCount > 0 ? 'Tanya/Pesan Kamar' : 'Daftar Antrean WA'}
               </a>
-            </div>
-          ) : (
-            <div className="landing-room-grid">
-              {availableRooms.map(room => (
-                <article key={room.id} className="lp-room-card">
-                  <div className="lp-room-card-bar" />
-                  <div className="lp-room-card-body">
-                    <div className="lp-room-card-header">
-                      <div>
-                        <h3 className="lp-room-card-name">{room.name}</h3>
-                        <span className="status-badge status-kosong">
-                          <CheckCircle size={11} /> Tersedia
-                        </span>
-                      </div>
-                      <Star size={18} color="#f59e0b" fill="#f59e0b" />
-                    </div>
-                    <div className="lp-room-card-price">
-                      {formatRp(room.price)}<span>/bulan</span>
-                    </div>
-                    {room.notes && (
-                      <p className="lp-room-card-notes">{room.notes}</p>
-                    )}
-                    <a
-                      href={`https://wa.me/6281234567890?text=Halo, saya tertarik dengan kamar ${room.name} yang tersedia.`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="lp-room-card-btn"
-                    >
-                      <MessageCircle size={15} /> Tanya Kamar Ini
-                    </a>
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
-
-          {/* All Rooms Table */}
-          {!loading && rooms.length > 0 && (
-            <div className="landing-all-rooms">
-              <div className="landing-all-rooms-title">📋 Semua Kamar</div>
-              <div className="table-container">
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Kamar</th>
-                      <th>Harga/Bulan</th>
-                      <th style={{ textAlign: 'center' }}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rooms.map(room => {
-                      const sc = room.status === 'kosong' ? 'status-kosong'
-                        : room.status === 'terisi' ? 'status-terisi' : 'status-menunggak';
-                      const label = room.status === 'kosong' ? 'Tersedia'
-                        : room.status === 'terisi' ? 'Terisi' : 'Menunggak';
-                      return (
-                        <tr key={room.id}>
-                          <td><strong>{room.name}</strong></td>
-                          <td style={{ color: '#4f46e5', fontWeight: 600 }}>{formatRp(room.price)}</td>
-                          <td style={{ textAlign: 'center' }}>
-                            <span className={`status-badge ${sc}`}>{label}</span>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
             </div>
           )}
         </div>
@@ -233,13 +186,13 @@ export default function LandingPage() {
             </p>
             <div className="landing-contact-btns">
               <a
-                href="https://wa.me/6281234567890"
+                href={`https://wa.me/${settings?.whatsapp || "6281234567890"}`}
                 target="_blank" rel="noopener noreferrer"
                 className="landing-btn-wa"
               >
                 <MessageCircle size={18} /> WhatsApp
               </a>
-              <a href="tel:+6281234567890" className="landing-btn-phone">
+              <a href={`tel:${settings?.telepon || "081234567890"}`} className="landing-btn-phone">
                 <Phone size={18} /> Telepon
               </a>
             </div>
@@ -249,7 +202,7 @@ export default function LandingPage() {
 
       {/* ── FOOTER ── */}
       <footer className="landing-footer">
-        <p>© 2026 A&apos;aTHaRaZ Kost. All rights reserved.</p>
+        <p>© 2026 {settings?.namaKos || "A'aTHaRaZ"} Kost. All rights reserved.</p>
       </footer>
     </div>
   );

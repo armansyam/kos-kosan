@@ -1,11 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
+export async function GET(request: Request) {
+  const { searchParams } = new URL(request.url);
+  const limit = searchParams.get('limit');
   try {
     const payments = await prisma.payment.findMany({
       include: { bill: { include: { tenant: { include: { room: true } } } } },
       orderBy: { paymentDate: 'desc' },
+      ...(limit ? { take: parseInt(limit) } : {}),
     });
     return NextResponse.json(payments);
   } catch (error) {
@@ -31,10 +34,10 @@ export async function POST(request: Request) {
     const payment = await prisma.payment.create({
       data: {
         billId,
-        paymentDate: new Date(paymentDate),
-        paymentMethod,
+        paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
+        paymentMethod: paymentMethod || 'transfer',
         amount,
-        notes,
+        notes: notes || '',
       },
     });
 

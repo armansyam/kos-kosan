@@ -100,3 +100,22 @@ model Expense {
 
   @@map("expenses")
 }
+
+model Setting {
+  id           String   @id @default(cuid())
+  namaKos      String   @default("A'aTHaRaZ") @map("nama_kos")
+  deskripsi    String   @default("Kos premium dengan fasilitas lengkap dan nyaman")
+  alamat       String   @default("Jl. Contoh No. 123, Kota")
+  telepon      String   @default("081234567890")
+  email        String   @default("kos@example.com")
+  whatsapp     String   @default("6281234567890")
+  website      String   @default("")
+  instagram    String   @default("kos_aatharaz")
+  facebook     String   @default("")
+  logo         String?  
+  colorUtama   String   @default("#4F46E5") @map("color_utama")
+  colorSidebar String   @default("#0F172A") @map("color_sidebar")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}

@@ -1,13 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { TrendingUp, TrendingDown, DollarSign, FileText, Wallet, Receipt, Calendar, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, DollarSign, FileText, Wallet, Receipt, Calendar, BarChart3, Banknote } from 'lucide-react';
 
 export default function LaporanPage() {
   const [payments, setPayments] = useState<any[]>([]);
   const [bills, setBills] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filterMonth, setFilterMonth] = useState('');
 
   useEffect(() => {
     Promise.all([
@@ -26,6 +27,18 @@ export default function LaporanPage() {
     return 'Rp' + n.toLocaleString('id-ID');
   }
 
+  function methodLabel(m: string) {
+    const map: Record<string,string> = { transfer:'Transfer Bank', tunai:'Tunai', qris:'QRIS', gopay:'GoPay', ovo:'OVO' };
+    return map[m] || m;
+  }
+
+  function methodBadgeClass(m: string) {
+    if (m==='transfer') return 'badge-info';
+    if (m==='tunai') return 'badge-success';
+    if (m==='qris'||m==='gopay'||m==='ovo') return 'badge-warning';
+    return 'badge-gray';
+  }
+
   // === PENDAPATAN ===
   const totalIncome = payments.reduce((s, p) => s + p.amount, 0);
   const totalUnpaid = bills.filter(b => b.status === 'belum_bayar').reduce((s, b) => s + b.amount, 0);
@@ -40,8 +53,16 @@ export default function LaporanPage() {
     return acc;
   }, {} as Record<string, number>);
 
+  // === DANA KAS ===
+  const danaKas = totalIncome - totalExpenses;
+
   // === LABA RUGI ===
   const netProfit = totalIncome - totalExpenses;
+
+  // === FILTERED PAYMENTS ===
+  const filteredPayments = filterMonth
+    ? payments.filter(p => new Date(p.paymentDate).toISOString().slice(0, 7) === filterMonth)
+    : payments;
 
   // === PER BULAN ===
   const monthlyData: Record<string, { income: number; expenses: number; incomeCount: number; expenseCount: number }> = {};
@@ -110,72 +131,88 @@ export default function LaporanPage() {
         </div>
       </div>
 
-      {/* STAT KARTU UTAMA */}
-      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-        <div className="stat-card">
-          <div className="stat-icon green"><TrendingUp size={22} /></div>
+      {/* STAT KARTU UTAMA (Unified Cash & Income Summary) */}
+      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', marginBottom: 20 }}>
+        
+        {/* Card 1: Saldo Kas */}
+        <div className="stat-card" style={{ borderLeft: '4px solid var(--primary)', background: '#F8FAFF' }}>
+          <div className="stat-icon blue"><Wallet size={22} /></div>
           <div className="stat-info">
-            <h3>Total Pendapatan</h3>
-            <div className="stat-value" style={{ fontSize: 18 }}>{formatRp(totalIncome)}</div>
-            <p style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 4 }}>{paidBills} tagihan lunas</p>
+            <h3>Saldo Dana KAS</h3>
+            <div className="stat-value" style={{ fontSize: 18, color: 'var(--primary)', fontWeight: 800 }}>
+              {danaKas >= 0 ? '+' : ''}{formatRp(danaKas)}
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
+              {danaKas >= 0 ? '🟢 Kas Surplus' : '🔴 Kas Defisit'}
+            </p>
           </div>
         </div>
-        <div className="stat-card">
+
+        {/* Card 2: Total Pemasukan */}
+        <div className="stat-card" style={{ borderLeft: '4px solid var(--success)', background: '#F4FDF7' }}>
+          <div className="stat-icon green"><TrendingUp size={22} /></div>
+          <div className="stat-info">
+            <h3>Total Pemasukan</h3>
+            <div className="stat-value" style={{ fontSize: 18, color: 'var(--success)', fontWeight: 800 }}>
+              {formatRp(totalIncome)}
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
+              {paidBills} tagihan lunas
+            </p>
+          </div>
+        </div>
+
+        {/* Card 3: Total Pengeluaran */}
+        <div className="stat-card" style={{ borderLeft: '4px solid var(--danger)', background: '#FDF4F5' }}>
           <div className="stat-icon red"><TrendingDown size={22} /></div>
           <div className="stat-info">
             <h3>Total Pengeluaran</h3>
-            <div className="stat-value" style={{ fontSize: 18, color: 'var(--danger)' }}>{formatRp(totalExpenses)}</div>
-            <p style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 4 }}>{expenses.length} transaksi</p>
+            <div className="stat-value" style={{ fontSize: 18, color: 'var(--danger)', fontWeight: 800 }}>
+              {formatRp(totalExpenses)}
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
+              {expenses.length} transaksi keluar
+            </p>
           </div>
         </div>
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: netProfit >= 0 ? '#ECFDF5' : '#FFF1F2', color: netProfit >= 0 ? 'var(--success)' : 'var(--danger)' }}>
-            <DollarSign size={22} />
-          </div>
-          <div className="stat-info">
-            <h3>Laba / Rugi</h3>
-            <div className="stat-value" style={{ fontSize: 18, color: netProfit >= 0 ? 'var(--success)' : 'var(--danger)' }}>{formatRp(netProfit)}</div>
-            <p style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 4 }}>{netProfit >= 0 ? '🟢 Untung' : '🔴 Rugi'}</p>
-          </div>
-        </div>
-        <div className="stat-card">
+
+        {/* Card 4: Piutang Belum Bayar */}
+        <div className="stat-card" style={{ borderLeft: '4px solid var(--warning)', background: '#FEF9F0' }}>
           <div className="stat-icon orange"><Receipt size={22} /></div>
           <div className="stat-info">
-            <h3>Belum Dibayar</h3>
-            <div className="stat-value" style={{ fontSize: 18, color: 'var(--warning)' }}>{formatRp(totalUnpaid)}</div>
-            <p style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 4 }}>{unpaidBills} tagihan pending</p>
+            <h3>Piutang (Belum Bayar)</h3>
+            <div className="stat-value" style={{ fontSize: 18, color: 'var(--warning)', fontWeight: 800 }}>
+              {formatRp(totalUnpaid)}
+            </div>
+            <p style={{ fontSize: 11, color: 'var(--text-secondary)', marginTop: 4 }}>
+              {unpaidBills} tagihan pending
+            </p>
           </div>
         </div>
+
       </div>
 
-      {/* RINCIAN PENGELUARAN PER KATEGORI */}
-      {Object.keys(expensesByCategory).length > 0 && (
-        <div className="content-grid" style={{ marginBottom: 20 }}>
-          <div className="card">
-            <div className="card-header">
-              <h3>📂 Rincian Pengeluaran per Kategori</h3>
-            </div>
-            <div className="card-body">
-              {Object.entries(expensesByCategory as Record<string, number>)
-                .sort((a, b) => b[1] - a[1])
-                .map(([cat, total]) => (
-                  <div key={cat} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--border)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)' }} />
-                      <span style={{ fontSize: 14, fontWeight: 500 }}>{cat}</span>
-                    </div>
-                    <strong style={{ color: 'var(--danger)', fontSize: 14 }}>{formatRp(total as number)}</strong>
-                  </div>
-                ))}
-            </div>
-          </div>
+      {/* Info Banner */}
+      <div style={{ padding: '12px 16px', background: '#F0F4FF', borderLeft: '4px solid var(--primary)', borderRadius: 8, fontSize: 13, color: '#312E81', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20 }}>
+        <span style={{ fontSize: 16 }}>ℹ️</span>
+        <span>
+          <strong>Informasi Keuangan</strong>: Saldo Dana KAS diperoleh dari Total Pemasukan dikurangi Total Pengeluaran. Total piutang aktif saat ini sebesar <strong>{formatRp(totalUnpaid)}</strong>.
+        </span>
+      </div>
 
-          <div className="card">
-            <div className="card-header">
-              <h3>📊 Proporsi Pengeluaran</h3>
-            </div>
-            <div className="card-body">
-              {Object.entries(expensesByCategory as Record<string, number>)
+      {/* 2-COLUMN ANALYSIS BLOCK */}
+      <div className="content-grid" style={{ marginBottom: 20 }}>
+        
+        {/* Left Column: Pengeluaran per Kategori */}
+        <div className="card">
+          <div className="card-header">
+            <h3>📂 Rincian & Proporsi Pengeluaran</h3>
+          </div>
+          <div className="card-body">
+            {Object.keys(expensesByCategory).length === 0 ? (
+              <p style={{ color: 'var(--text-secondary)', fontSize: 13, textAlign: 'center', padding: 20 }}>Belum ada data pengeluaran</p>
+            ) : (
+              Object.entries(expensesByCategory as Record<string, number>)
                 .sort((a, b) => b[1] - a[1])
                 .map(([cat, total]) => {
                   const pct = totalExpenses > 0 ? (((total as number) / totalExpenses) * 100).toFixed(1) : '0';
@@ -191,18 +228,52 @@ export default function LaporanPage() {
                     <div key={cat} style={{ marginBottom: 14 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, marginBottom: 4 }}>
                         <span style={{ fontWeight: 500 }}>{cat}</span>
-                        <span style={{ color: 'var(--text-secondary)' }}>{pct}%</span>
+                        <span style={{ fontWeight: 600, color: 'var(--danger)' }}>{formatRp(total)} ({pct}%)</span>
                       </div>
-                      <div className="progress-bar">
+                      <div className="progress-bar" style={{ height: 8 }}>
                         <div className="progress-fill" style={{ width: `${pct}%`, background: c }} />
                       </div>
                     </div>
                   );
-                })}
+                })
+            )}
+          </div>
+        </div>
+
+        {/* Right Column: Ringkasan Tagihan */}
+        <div className="card">
+          <div className="card-header">
+            <h3>📈 Status Tagihan & Transaksi</h3>
+          </div>
+          <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div style={{ background: '#ECFDF5', borderRadius: 8, padding: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#059669', marginBottom: 2 }}>Tagihan Lunas</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#059669' }}>{paidBills}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{formatRp(totalPaid)}</div>
+              </div>
+              <div style={{ background: '#FFF7ED', borderRadius: 8, padding: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#D97706', marginBottom: 2 }}>Belum Bayar</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#D97706' }}>{unpaidBills}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{formatRp(totalUnpaid)}</div>
+              </div>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
+              <div style={{ background: '#EFF6FF', borderRadius: 8, padding: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#2563EB', marginBottom: 2 }}>Total Tagihan</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#2563EB' }}>{bills.length}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{formatRp(bills.reduce((s, b) => s + b.amount, 0))}</div>
+              </div>
+              <div style={{ background: '#F5F3FF', borderRadius: 8, padding: 12 }}>
+                <div style={{ fontSize: 11, fontWeight: 600, color: '#7C3AED', marginBottom: 2 }}>Total Transaksi</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: '#7C3AED' }}>{payments.length}</div>
+                <div style={{ fontSize: 12, color: 'var(--text-secondary)' }}>{formatRp(totalIncome)}</div>
+              </div>
             </div>
           </div>
         </div>
-      )}
+
+      </div>
 
       {/* TABEL LABA RUGI PER BULAN */}
       <div className="card" style={{ marginBottom: 20 }}>
@@ -311,39 +382,49 @@ export default function LaporanPage() {
         )}
       </div>
 
-      {/* RINGKASAN TAGIHAN */}
+      {/* RIWAYAT TRANSAKSI PEMBAYARAN MASUK */}
       <div className="card">
         <div className="card-header">
-          <h3><FileText size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} /> Ringkasan Tagihan</h3>
+          <h3>📋 Riwayat Pembayaran Masuk</h3>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-secondary)' }}>Filter Bulan:</label>
+            <input type="month" value={filterMonth} onChange={e => setFilterMonth(e.target.value)}
+              style={{ border: '1.5px solid var(--border)', borderRadius: 8, padding: '6px 10px', fontSize: 13, fontFamily: 'inherit' }} />
+            {filterMonth && <button onClick={() => setFilterMonth('')} style={{ border: 'none', background: 'none', color: 'var(--danger)', cursor: 'pointer', fontSize: 13 }}>✕ Reset</button>}
+          </div>
         </div>
         {loading ? (
           <div style={{ textAlign: 'center', padding: 40 }}>
             <div className="spinner" style={{ borderTopColor: 'var(--primary)', width: 36, height: 36, margin: '0 auto' }} />
           </div>
         ) : (
-          <div className="card-body">
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: 16 }}>
-              <div style={{ background: '#ECFDF5', borderRadius: 10, padding: 16 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#059669', marginBottom: 4 }}>Lunas</div>
-                <div style={{ fontSize: 24, fontWeight: 800 }}>{paidBills}</div>
-                <div style={{ fontSize: 12, color: '#059669' }}>{formatRp(totalPaid)}</div>
-              </div>
-              <div style={{ background: '#FFF7ED', borderRadius: 10, padding: 16 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#D97706', marginBottom: 4 }}>Belum Bayar</div>
-                <div style={{ fontSize: 24, fontWeight: 800 }}>{unpaidBills}</div>
-                <div style={{ fontSize: 12, color: '#D97706' }}>{formatRp(totalUnpaid)}</div>
-              </div>
-              <div style={{ background: '#EFF6FF', borderRadius: 10, padding: 16 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#2563EB', marginBottom: 4 }}>Total Tagihan</div>
-                <div style={{ fontSize: 24, fontWeight: 800 }}>{bills.length}</div>
-                <div style={{ fontSize: 12, color: '#2563EB' }}>{formatRp(bills.reduce((s, b) => s + b.amount, 0))}</div>
-              </div>
-              <div style={{ background: '#F5F3FF', borderRadius: 10, padding: 16 }}>
-                <div style={{ fontSize: 12, fontWeight: 600, color: '#7C3AED', marginBottom: 4 }}>Total Transaksi</div>
-                <div style={{ fontSize: 24, fontWeight: 800 }}>{payments.length}</div>
-                <div style={{ fontSize: 12, color: '#7C3AED' }}>{formatRp(totalIncome)}</div>
-              </div>
-            </div>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Kamar</th><th>Penghuni</th><th>Bulan Tagihan</th>
+                  <th>Tanggal Bayar</th><th>Nominal</th><th>Metode</th><th>Catatan</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredPayments.map(p => (
+                  <tr key={p.id}>
+                    <td><strong>{p.bill?.tenant?.room?.name ?? '-'}</strong></td>
+                    <td>{p.bill?.tenant?.fullName || '-'}</td>
+                    <td>{p.bill?.month}</td>
+                    <td>{new Date(p.paymentDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                    <td><strong style={{ color: 'var(--success)' }}>{formatRp(p.amount)}</strong></td>
+                    <td><span className={`badge ${methodBadgeClass(p.paymentMethod)}`}>{methodLabel(p.paymentMethod)}</span></td>
+                    <td style={{ color: 'var(--text-secondary)', fontSize: 13 }}>{p.notes || '-'}</td>
+                  </tr>
+                ))}
+                {filteredPayments.length === 0 && (
+                  <tr><td colSpan={7} style={{ textAlign: 'center', padding: 32, color: 'var(--text-light)' }}>
+                    Belum ada data pembayaran
+                  </td></tr>
+                )}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

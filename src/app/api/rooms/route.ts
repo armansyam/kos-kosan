@@ -40,13 +40,14 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { name, price, notes } = body;
+    const { name, price, status, notes } = body;
 
     const room = await prisma.room.create({
-      data: { name, price, notes },
+      data: { name, price, status: status || 'kosong', notes },
     });
     return NextResponse.json(room, { status: 201 });
   } catch (error) {
+    console.error('Room create error:', error);
     return NextResponse.json({ error: 'Gagal membuat kamar' }, { status: 500 });
   }
 }

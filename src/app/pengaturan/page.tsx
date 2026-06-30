@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
 import { Save, Upload, Building2, User, Phone, Mail, MapPin, Globe, Palette, Camera, MessageCircle, Instagram, Facebook } from 'lucide-react';
 
@@ -14,25 +14,67 @@ export default function PengaturanPage() {
     website: "",
     instagram: "kos_aatharaz",
     facebook: "",
+    colorUtama: "#4F46E5",
+    colorSidebar: "#0F172A",
   });
 
   const [logo, setLogo] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState('');
 
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(data => {
+        if (data && !data.error) {
+          setProfile({
+            namaKos: data.namaKos || "A'aTHaRaZ",
+            deskripsi: data.deskripsi || "Kos premium dengan fasilitas lengkap dan nyaman",
+            alamat: data.alamat || "Jl. Contoh No. 123, Kota",
+            telepon: data.telepon || "081234567890",
+            email: data.email || "kos@example.com",
+            whatsapp: data.whatsapp || "6281234567890",
+            website: data.website || "",
+            instagram: data.instagram || "",
+            facebook: data.facebook || "",
+            colorUtama: data.colorUtama || "#4F46E5",
+            colorSidebar: data.colorSidebar || "#0F172A",
+          });
+          if (data.logo) {
+            setLogo(data.logo);
+          }
+        }
+      });
+  }, []);
+
   function showToast(msg: string) {
     setToast(msg);
     setTimeout(() => setToast(''), 3000);
   }
 
-  function handleSave(e: React.FormEvent) {
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
-    // Simulate save
-    setTimeout(() => {
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...profile, logo }),
+      });
+      if (res.ok) {
+        showToast('Pengaturan berhasil disimpan');
+        // Instantly update page CSS variables
+        document.documentElement.style.setProperty('--primary', profile.colorUtama);
+        document.documentElement.style.setProperty('--primary-dark', profile.colorUtama + 'dd');
+        document.documentElement.style.setProperty('--sidebar-bg', profile.colorSidebar);
+      } else {
+        showToast('Gagal menyimpan pengaturan');
+      }
+    } catch {
+      showToast('Error koneksi');
+    } finally {
       setSaving(false);
-      showToast('Pengaturan berhasil disimpan');
-    }, 500);
+    }
   }
 
   function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
@@ -181,15 +223,15 @@ export default function PengaturanPage() {
                 <div>
                   <label style={labelStyle}>Warna Utama</label>
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                    <input type="color" defaultValue="#4F46E5" style={{ width:40, height:40, borderRadius:8, border:'1.5px solid var(--border)', cursor:'pointer', padding:2 }} />
-                    <span style={{ fontSize:13, color:'var(--text-secondary)' }}>#4F46E5</span>
+                    <input type="color" value={profile.colorUtama} onChange={e => setProfile(p => ({...p, colorUtama: e.target.value}))} style={{ width:40, height:40, borderRadius:8, border:'1.5px solid var(--border)', cursor:'pointer', padding:2 }} />
+                    <span style={{ fontSize:13, color:'var(--text-secondary)' }}>{profile.colorUtama}</span>
                   </div>
                 </div>
                 <div>
                   <label style={labelStyle}>Warna Sidebar</label>
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-                    <input type="color" defaultValue="#0F172A" style={{ width:40, height:40, borderRadius:8, border:'1.5px solid var(--border)', cursor:'pointer', padding:2 }} />
-                    <span style={{ fontSize:13, color:'var(--text-secondary)' }}>#0F172A</span>
+                    <input type="color" value={profile.colorSidebar} onChange={e => setProfile(p => ({...p, colorSidebar: e.target.value}))} style={{ width:40, height:40, borderRadius:8, border:'1.5px solid var(--border)', cursor:'pointer', padding:2 }} />
+                    <span style={{ fontSize:13, color:'var(--text-secondary)' }}>{profile.colorSidebar}</span>
                   </div>
                 </div>
               </div>

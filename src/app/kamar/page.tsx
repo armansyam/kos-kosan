@@ -15,7 +15,6 @@ export default function KamarPage() {
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [formData, setFormData] = useState({ name: '', price: 0, status: 'kosong', notes: '' });
   const [loading, setLoading] = useState(true);
-  const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
   const [toast, setToast] = useState('');
 
   useEffect(() => { fetchRooms(); }, []);
@@ -75,14 +74,6 @@ export default function KamarPage() {
           <p style={{ fontSize:13, color:'var(--text-secondary)', marginTop:2 }}>Kelola semua kamar kos Anda</p>
         </div>
         <div style={{ display:'flex', gap:10 }}>
-          <div style={{ display:'flex', border:'1.5px solid var(--border)', borderRadius:8, overflow:'hidden' }}>
-            <button onClick={() => setViewMode('grid')} style={{ padding:'8px 14px', border:'none', background: viewMode==='grid'?'var(--primary)':'white', color: viewMode==='grid'?'white':'var(--text-secondary)', cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:600, transition:'all 0.15s' }}>
-              Grid
-            </button>
-            <button onClick={() => setViewMode('table')} style={{ padding:'8px 14px', border:'none', background: viewMode==='table'?'var(--primary)':'white', color: viewMode==='table'?'white':'var(--text-secondary)', cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:600, transition:'all 0.15s' }}>
-              Tabel
-            </button>
-          </div>
           <button onClick={() => { setShowModal(true); setEditingRoom(null); setFormData({ name:'', price:0, status:'kosong', notes:'' }); }} className="btn btn-primary">
             <Plus size={16} /> Tambah Kamar
           </button>
@@ -90,7 +81,7 @@ export default function KamarPage() {
       </div>
 
       {/* STAT MINI */}
-      <div className="stats-grid" style={{ gridTemplateColumns:'repeat(4,1fr)', marginBottom:24 }}>
+      <div className="stats-grid" style={{ marginBottom:24 }}>
         <div className="stat-card"><div className="stat-icon blue"><Home size={20}/></div><div className="stat-info"><h3>Total</h3><div className="stat-value">{totalRooms}</div></div></div>
         <div className="stat-card"><div className="stat-icon green"><Users size={20}/></div><div className="stat-info"><h3>Terisi</h3><div className="stat-value" style={{ color:'var(--success)' }}>{terisi}</div></div></div>
         <div className="stat-card"><div className="stat-icon gray"><Home size={20}/></div><div className="stat-info"><h3>Kosong</h3><div className="stat-value">{kosong}</div></div></div>
@@ -99,56 +90,6 @@ export default function KamarPage() {
 
       {loading ? (
         <div style={{ textAlign:'center', padding:60 }}><div className="spinner" style={{ borderTopColor:'var(--primary)', width:40, height:40, margin:'0 auto' }} /></div>
-      ) : viewMode === 'grid' ? (
-        <div className="card">
-          <div className="card-header">
-            <h3>Grid Kamar</h3>
-            <div style={{ display:'flex', gap:12, fontSize:12 }}>
-              <span style={{ display:'flex', alignItems:'center', gap:4 }}><span style={{ width:10, height:10, borderRadius:'50%', background:'var(--success)' }} />Terisi</span>
-              <span style={{ display:'flex', alignItems:'center', gap:4 }}><span style={{ width:10, height:10, borderRadius:'50%', background:'var(--danger)' }} />Menunggak</span>
-              <span style={{ display:'flex', alignItems:'center', gap:4 }}><span style={{ width:10, height:10, borderRadius:'50%', background:'#94A3B8' }} />Kosong</span>
-            </div>
-          </div>
-          <div className="card-body">
-            {rooms.length === 0 ? (
-              <div className="empty-state">
-                <Home size={48} />
-                <h3>Belum ada kamar</h3>
-                <p>Tambahkan kamar untuk mulai mengelola kos Anda</p>
-              </div>
-            ) : (
-              <div className="room-grid" style={{ gridTemplateColumns:'repeat(auto-fill,minmax(170px,1fr))' }}>
-                {rooms.map(room => {
-                  const tenant = room.tenants?.[0];
-                  const cls = room.status==='terisi'?'status-terisi':room.status==='menunggak'?'status-menunggak':'status-kosong';
-                  return (
-                    <div key={room.id} className={`room-card ${cls}`} style={{ position:'relative' }}>
-                      <div style={{ position:'absolute', top:10, right:10, display:'flex', gap:6 }}>
-                        <button onClick={() => openEdit(room)} style={{ background:'rgba(255,255,255,0.8)', border:'none', borderRadius:6, padding:4, cursor:'pointer', display:'flex', color:'var(--text-secondary)' }}>
-                          <Edit size={14} />
-                        </button>
-                        <button onClick={() => handleDelete(room.id)} style={{ background:'rgba(255,255,255,0.8)', border:'none', borderRadius:6, padding:4, cursor:'pointer', display:'flex', color:'var(--danger)' }}>
-                          <Trash2 size={14} />
-                        </button>
-                      </div>
-                      <div className="room-card-name">{room.name}</div>
-                      {tenant ? (
-                        <>
-                          <div style={{ fontSize:11, color:'var(--text-secondary)', marginBottom:2 }}>{tenant.fullName}</div>
-                          <div style={{ fontSize:11, color:'var(--text-secondary)', marginBottom:6 }}>Tgl {tenant.dueDate} tiap bulan</div>
-                        </>
-                      ) : (
-                        <div style={{ fontSize:11, color:'var(--text-secondary)', marginBottom:8 }}>Tidak ada penghuni</div>
-                      )}
-                      <div className="room-card-price">{formatRp(room.price)}/bln</div>
-                      <span className="room-card-status">{room.status==='terisi'?'Terisi':room.status==='menunggak'?'Menunggak':'Kosong'}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
       ) : (
         <div className="card">
           <div className="table-container">

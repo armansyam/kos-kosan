@@ -75,6 +75,27 @@ async function main() {
     },
   });
 
+  // Create default settings
+  const existingSetting = await prisma.setting.findFirst();
+  if (!existingSetting) {
+    await prisma.setting.create({
+      data: {
+        id: 'default',
+        namaKos: "A'aTHaRaZ",
+        deskripsi: "Kos premium dengan fasilitas lengkap dan nyaman",
+        alamat: "Jl. Contoh No. 123, Kota",
+        telepon: "081234567890",
+        email: "kos@example.com",
+        whatsapp: "6281234567890",
+        website: "",
+        instagram: "kos_aatharaz",
+        facebook: "",
+        colorUtama: "#4F46E5",
+        colorSidebar: "#0F172A",
+      },
+    });
+  }
+
   console.log('✅ Seed data created successfully');
 }
 
