@@ -29,14 +29,20 @@ export default function PenghuniPage() {
   // Payment states
   const [showPayModal, setShowPayModal] = useState<any | null>(null);
   const [payForm, setPayForm] = useState({ paymentDate: '', paymentMethod: 'transfer', amount: 0, notes: '' });
+  const [settings, setSettings] = useState<any>(null);
 
   useEffect(() => { fetchData(); }, []);
 
   async function fetchData() {
     setLoading(true);
-    const [t, r] = await Promise.all([fetch('/api/tenants').then(x=>x.json()), fetch('/api/rooms').then(x=>x.json())]);
+    const [t, r, s] = await Promise.all([
+      fetch('/api/tenants').then(x=>x.json()),
+      fetch('/api/rooms').then(x=>x.json()),
+      fetch('/api/settings').then(x=>x.json())
+    ]);
     setTenants(Array.isArray(t) ? t : []);
     setRooms(Array.isArray(r) ? r : []);
+    setSettings(s && !s.error ? s : null);
     setLoading(false);
   }
 
@@ -156,7 +162,8 @@ export default function PenghuniPage() {
     const amount = bill.amount.toLocaleString('id-ID');
     const due = new Date(bill.dueDate).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
     const wa = tenant.whatsapp.replace(/^0/, '62');
-    const msg = encodeURIComponent(`Halo Pak/Bu ${name},\nBerikut tagihan kos kamar ${room} untuk bulan ${month}.\n\nTotal Tagihan: Rp${amount}\nJatuh Tempo: ${due}\n\nTerima kasih 🙏`);
+    const bankDetails = settings?.rekening ? `\n\nPembayaran dapat ditransfer ke:\n${settings.rekening}` : '';
+    const msg = encodeURIComponent(`Halo Pak/Bu ${name},\nBerikut tagihan kos kamar ${room} untuk bulan ${month}.\n\nTotal Tagihan: Rp${amount}\nJatuh Tempo: ${due}${bankDetails}\n\nTerima kasih 🙏`);
     window.open(`https://wa.me/${wa}?text=${msg}`, '_blank');
   }
 

@@ -115,6 +115,7 @@ model Setting {
   logo         String?  
   colorUtama   String   @default("#4F46E5") @map("color_utama")
   colorSidebar String   @default("#0F172A") @map("color_sidebar")
+  rekening     String   @default("")
   updatedAt    DateTime @updatedAt @map("updated_at")
 
   @@map("settings")

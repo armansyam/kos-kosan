@@ -19,6 +19,7 @@ export async function GET() {
           facebook: "",
           colorUtama: "#4F46E5",
           colorSidebar: "#0F172A",
+          rekening: "",
         },
       });
     }
@@ -45,6 +46,7 @@ export async function POST(request: Request) {
       logo,
       colorUtama,
       colorSidebar,
+      rekening,
     } = body;
 
     let setting = await prisma.setting.findFirst();
@@ -64,6 +66,7 @@ export async function POST(request: Request) {
           logo,
           colorUtama,
           colorSidebar,
+          rekening,
         },
       });
     } else {
@@ -82,6 +85,7 @@ export async function POST(request: Request) {
           logo,
           colorUtama,
           colorSidebar,
+          rekening,
         },
       });
     }

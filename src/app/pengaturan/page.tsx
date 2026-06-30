@@ -16,6 +16,7 @@ export default function PengaturanPage() {
     facebook: "",
     colorUtama: "#4F46E5",
     colorSidebar: "#0F172A",
+    rekening: "",
   });
 
   const [logo, setLogo] = useState<string | null>(null);
@@ -39,6 +40,7 @@ export default function PengaturanPage() {
             facebook: data.facebook || "",
             colorUtama: data.colorUtama || "#4F46E5",
             colorSidebar: data.colorSidebar || "#0F172A",
+            rekening: data.rekening || "",
           });
           if (data.logo) {
             setLogo(data.logo);
@@ -208,6 +210,29 @@ export default function PengaturanPage() {
                   <label style={labelStyle}><Facebook size={14} style={{marginRight:4}} /> Facebook</label>
                   <input type="text" value={profile.facebook} onChange={e => setProfile(p => ({...p, facebook: e.target.value}))} style={inputStyle} placeholder="URL atau username" />
                 </div>
+              </div>
+            </div>
+          </div>
+
+          {/* REKENING */}
+          <div className="card">
+            <div className="card-header">
+              <div className="stat-icon blue"><Building2 size={18} /></div>
+              <h3>Rekening Pembayaran</h3>
+            </div>
+            <div className="card-body">
+              <div>
+                <label style={labelStyle}>Nomor Rekening Kos (Ditampilkan di WhatsApp Tagihan)</label>
+                <textarea 
+                  rows={3} 
+                  value={profile.rekening} 
+                  onChange={e => setProfile(p => ({...p, rekening: e.target.value}))} 
+                  style={{...inputStyle, resize:'vertical'}}
+                  placeholder="Contoh:&#10;BCA: 123456789 a/n Arman Syam&#10;Mandiri: 987654321 a/n Arman Syam" 
+                />
+                <p style={{ fontSize: 11, color: 'var(--text-light)', marginTop: 8 }}>
+                  Tuliskan nomor rekening bank Anda. Informasi ini akan otomatis disertakan saat Anda mengirim tagihan via WhatsApp ke penghuni.
+                </p>
               </div>
             </div>
           </div>
