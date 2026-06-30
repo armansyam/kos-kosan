@@ -1001,3 +1001,14 @@
   50% { transform: scale(1.3); opacity: 1; box-shadow: 0 0 12px #14b8a6; }
   100% { transform: scale(1); opacity: 0.6; }
 }
+
+/* ── Skeleton Loading Animation ── */
+.skeleton-pulse {
+  animation: skeletonPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes skeletonPulse {
+  0% { opacity: 0.4; }
+  50% { opacity: 0.85; }
+  100% { opacity: 0.4; }
+}

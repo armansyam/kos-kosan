@@ -79,13 +79,36 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
         {/* Brand */}
         <div className="sidebar-brand">
-          <div className="sidebar-brand-icon" style={settings?.logo ? { background: `url(${settings.logo}) center/cover no-repeat` } : undefined}>
-            {!settings?.logo && <Building2 size={20} />}
-          </div>
-          <div>
-            <h2>{settings?.namaKos || "A'aTHaRaZ"}</h2>
-            <span>Admin Dashboard</span>
-          </div>
+          {!settings ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
+              <div className="skeleton-pulse" style={{
+                width: '36px', height: '36px', borderRadius: '8px',
+                background: 'rgba(255, 255, 255, 0.12)',
+                flexShrink: 0
+              }} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '60%' }}>
+                <div className="skeleton-pulse" style={{
+                  height: '14px', borderRadius: '4px',
+                  background: 'rgba(255, 255, 255, 0.15)'
+                }} />
+                <div className="skeleton-pulse" style={{
+                  height: '10px', borderRadius: '4px',
+                  background: 'rgba(255, 255, 255, 0.08)',
+                  width: '70%'
+                }} />
+              </div>
+            </div>
+          ) : (
+            <>
+              <div className="sidebar-brand-icon" style={settings.logo ? { background: `url(${settings.logo}) center/cover no-repeat` } : undefined}>
+                {!settings.logo && <Building2 size={20} />}
+              </div>
+              <div>
+                <h2>{settings.namaKos || "A'aTHaRaZ"}</h2>
+                <span>Admin Dashboard</span>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Nav */}
