@@ -24,7 +24,7 @@ export default function PenghuniPage() {
   });
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState('');
-  const [showInactive, setShowInactive] = useState(false);
+  const [viewTab, setViewTab] = useState<'aktif' | 'keluar' | 'arsip'>('aktif');
 
   // Payment states
   const [showPayModal, setShowPayModal] = useState<any | null>(null);
@@ -167,9 +167,28 @@ export default function PenghuniPage() {
     window.open(`https://wa.me/${wa}?text=${msg}`, '_blank');
   }
 
+  const getDaysSinceCheckout = (checkOutDateStr: string | null) => {
+    if (!checkOutDateStr) return 0;
+    const checkout = new Date(checkOutDateStr);
+    const today = new Date();
+    checkout.setHours(0,0,0,0);
+    today.setHours(0,0,0,0);
+    const diffTime = today.getTime() - checkout.getTime();
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
+
   const activeTenants = tenants.filter(t => t.active);
   const inactiveTenants = tenants.filter(t => !t.active);
-  const displayTenants = showInactive ? inactiveTenants : activeTenants;
+  
+  const recentCheckouts = inactiveTenants.filter(t => getDaysSinceCheckout(t.checkOutDate) <= 30);
+  const archivedTenants = inactiveTenants.filter(t => getDaysSinceCheckout(t.checkOutDate) > 30);
+  
+  const displayTenants = viewTab === 'aktif' 
+    ? activeTenants 
+    : viewTab === 'keluar' 
+      ? recentCheckouts 
+      : archivedTenants;
+
   const availableRooms = rooms.filter(r => r.status === 'kosong' || r.id === editingTenant?.roomId);
 
   return (
@@ -179,19 +198,33 @@ export default function PenghuniPage() {
         <div>
           <h2>Penghuni</h2>
           <p style={{ fontSize:13, color:'var(--text-secondary)', marginTop:2 }}>
-            {activeTenants.length} aktif · {inactiveTenants.length} sudah keluar
+            {activeTenants.length} aktif · {recentCheckouts.length} baru keluar · {archivedTenants.length} diarsipkan
           </p>
         </div>
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-          <button onClick={() => setShowInactive(!showInactive)} className="btn btn-outline" style={{ fontSize:13 }}>
-            {showInactive ? '← Kembali ke Aktif' : 'Lihat yang Sudah Keluar'}
-          </button>
-          {!showInactive && (
+          {viewTab === 'aktif' && (
             <button onClick={() => { setShowModal(true); setEditingTenant(null); resetForm(); }} className="btn btn-primary">
               <Plus size={16} /> Tambah Penghuni
             </button>
           )}
         </div>
+      </div>
+
+      {/* Sub navigation tabs */}
+      <div className="sub-tabs" style={{ display:'flex', gap:8, marginBottom:20, overflowX:'auto', paddingBottom:4 }}>
+        {[
+          { key: 'aktif', label: 'Penghuni Aktif', count: activeTenants.length },
+          { key: 'keluar', label: 'Sudah Keluar (≤30 hari)', count: recentCheckouts.length },
+          { key: 'arsip', label: 'Arsip (>30 hari)', count: archivedTenants.length },
+        ].map(t => (
+          <button 
+            key={t.key} 
+            onClick={() => setViewTab(t.key as any)} 
+            className={`sub-tab-btn ${viewTab === t.key ? 'active' : ''}`}
+          >
+            {t.label} <span className="sub-tab-count">{t.count}</span>
+          </button>
+        ))}
       </div>
 
       {loading ? (
@@ -316,7 +349,11 @@ export default function PenghuniPage() {
           </div>
           {displayTenants.length === 0 && (
             <div className="card" style={{ textAlign:'center', padding:32, color:'var(--text-light)' }}>
-              {showInactive ? 'Belum ada penghuni yang keluar' : 'Belum ada penghuni aktif'}
+              {viewTab === 'aktif' 
+                ? 'Belum ada penghuni aktif' 
+                : viewTab === 'keluar' 
+                  ? 'Belum ada penghuni yang baru keluar (≤30 hari)' 
+                  : 'Belum ada penghuni di arsip (>30 hari)'}
             </div>
           )}
         </div>
