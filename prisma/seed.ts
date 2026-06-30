@@ -16,35 +16,22 @@ async function main() {
     },
   });
 
-  // 2. Create 15 clean rooms (Lantai 1: A1-A5, Lantai 2: B1-B5, Lantai 3: C1-C5)
-  const floors = [
-    { name: '1', prefix: 'A' },
-    { name: '2', prefix: 'B' },
-    { name: '3', prefix: 'C' }
-  ];
-
-  for (const floor of floors) {
-    for (let i = 1; i <= 5; i++) {
-      const roomName = `${floor.prefix}${i}`;
-      const roomId = roomName.toLowerCase();
-      
-      // Default price based on floor
-      let price = 800000;
-      if (floor.name === '2') price = 1000000;
-      if (floor.name === '3') price = 1200000;
-
-      await prisma.room.upsert({
-        where: { id: roomId },
-        update: {},
-        create: {
-          id: roomId,
-          name: roomName,
-          floor: parseInt(floor.name),
-          price: price,
-          status: 'kosong'
-        }
-      });
-    }
+  // 2. Create 5 clean rooms on Floor 1 (A1-A5) as a template
+  for (let i = 1; i <= 5; i++) {
+    const roomName = `A${i}`;
+    const roomId = roomName.toLowerCase();
+    
+    await prisma.room.upsert({
+      where: { id: roomId },
+      update: {},
+      create: {
+        id: roomId,
+        name: roomName,
+        floor: 1,
+        price: 800000,
+        status: 'kosong'
+      }
+    });
   }
 
   // 3. Create default settings
@@ -70,7 +57,7 @@ async function main() {
     });
   }
 
-  console.log('✅ Production Seed data (Admin & 15 Clean Rooms) created successfully');
+  console.log('✅ Template Seed data (Admin & 5 Clean Rooms in Floor 1) created successfully');
 }
 
 main()
