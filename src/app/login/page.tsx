@@ -119,17 +119,21 @@ export default function LoginPage() {
         </form>
 
         {/* Developer Credit */}
-        <div style={{ marginTop: 24, textAlign: 'center', fontSize: 12, color: '#94a3b8' }}>
-          <span>Developed by </span>
+        <div style={{ marginTop: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 12, color: '#94a3b8' }}>
+          <span>Developed by</span>
           <a 
             href="https://github.com/armansyam" 
             target="_blank" 
             rel="noopener noreferrer" 
-            style={{ color: 'var(--primary, #4f46e5)', fontWeight: 600, textDecoration: 'none', transition: 'color 0.2s' }}
-            onMouseOver={(e) => e.currentTarget.style.color = 'var(--primary-dark)'}
-            onMouseOut={(e) => e.currentTarget.style.color = 'var(--primary)'}
+            style={{ display: 'inline-flex', alignItems: 'center', transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)' }}
+            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.1) rotate(3deg)'}
+            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
-            AMS
+            <img 
+              src="/ams-logo.png" 
+              alt="AMS Logo" 
+              style={{ height: '24px', objectFit: 'contain', display: 'block' }} 
+            />
           </a>
         </div>
       </div>
