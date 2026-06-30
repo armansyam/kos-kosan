@@ -91,39 +91,99 @@ export default function KamarPage() {
       {loading ? (
         <div style={{ textAlign:'center', padding:60 }}><div className="spinner" style={{ borderTopColor:'var(--primary)', width:40, height:40, margin:'0 auto' }} /></div>
       ) : (
-        <div className="card">
-          <div className="table-container">
-            <table>
-              <thead>
-                <tr><th>Nama</th><th>Harga/Bln</th><th>Status</th><th>Penghuni</th><th>Catatan</th><th style={{ textAlign:'right' }}>Aksi</th></tr>
-              </thead>
-              <tbody>
-                {rooms.map(room => {
-                  const tenant = room.tenants?.[0];
-                  return (
-                    <tr key={room.id}>
-                      <td><strong style={{ fontSize:16 }}>{room.name}</strong></td>
-                      <td>{formatRp(room.price)}</td>
-                      <td>
-                        {room.status==='terisi'&&<span className="badge badge-success">Terisi</span>}
-                        {room.status==='kosong'&&<span className="badge badge-gray">Kosong</span>}
-                        {room.status==='menunggak'&&<span className="badge badge-danger">Menunggak</span>}
-                      </td>
-                      <td>{tenant ? tenant.fullName : <span style={{ color:'var(--text-light)' }}>-</span>}</td>
-                      <td style={{ color:'var(--text-secondary)', fontSize:13 }}>{room.notes||'-'}</td>
-                      <td>
-                        <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
-                          <button onClick={() => openEdit(room)} className="btn btn-outline btn-sm"><Edit size={14} /></button>
-                          <button onClick={() => handleDelete(room.id)} className="btn btn-danger btn-sm"><Trash2 size={14} /></button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-                {rooms.length===0 && <tr><td colSpan={6} style={{ textAlign:'center', padding:32, color:'var(--text-light)' }}>Belum ada kamar</td></tr>}
-              </tbody>
-            </table>
+        <div className="room-groups-list">
+          <div className="dash-room-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+            {rooms.map(room => {
+              const tenant = room.tenants?.[0];
+              const cardColor = room.status === 'terisi' 
+                ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)'
+                : room.status === 'menunggak'
+                  ? 'linear-gradient(135deg, #ef4444 0%, #f87171 100%)'
+                  : 'linear-gradient(135deg, #94a3b8 0%, #cbd5e1 100%)';
+              
+              return (
+                <div 
+                  key={room.id}
+                  className="dash-room-card"
+                  style={{
+                    background: 'white',
+                    borderRadius: '16px',
+                    border: '1px solid var(--border)',
+                    overflow: 'hidden',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    transition: 'transform 0.2s, box-shadow 0.2s'
+                  }}
+                >
+                  {/* Status Color Bar */}
+                  <div style={{ height: '6px', background: cardColor }} />
+                  
+                  {/* Card Content */}
+                  <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    {/* Header: Room Name & Status Badge */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+                      <span style={{
+                        background: '#eef2ff',
+                        color: 'var(--primary)',
+                        fontSize: '15px',
+                        fontWeight: 800,
+                        padding: '4px 12px',
+                        borderRadius: '8px',
+                        border: '1px solid #e0e7ff'
+                      }}>
+                        Kamar {room.name}
+                      </span>
+                      {room.status === 'terisi' && <span className="badge badge-success">Terisi</span>}
+                      {room.status === 'kosong' && <span className="badge badge-gray">Kosong</span>}
+                      {room.status === 'menunggak' && <span className="badge badge-danger">Menunggak</span>}
+                    </div>
+
+                    {/* Tenant Details */}
+                    <div style={{ fontSize: '13px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '16px', flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ color: '#94a3b8' }}>Penghuni</span>
+                        <span style={{ fontWeight: 600, color: tenant ? '#1e293b' : '#94a3b8' }}>
+                          {tenant ? tenant.fullName : 'Tidak ada'}
+                        </span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <span style={{ color: '#94a3b8' }}>Harga Sewa</span>
+                        <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{formatRp(room.price)}</span>
+                      </div>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid #f1f5f9', paddingTop: '8px', marginTop: '4px' }}>
+                        <span style={{ color: '#94a3b8', fontSize: '11px', textTransform: 'uppercase', fontWeight: 600 }}>Catatan</span>
+                        <span style={{ fontStyle: room.notes ? 'normal' : 'italic', color: room.notes ? '#475569' : '#94a3b8', fontSize: '12px', lineHeight: '1.4' }}>
+                          {room.notes || 'Tidak ada catatan'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Actions bar */}
+                    <div style={{
+                      display: 'flex',
+                      gap: '8px',
+                      justifyContent: 'flex-end',
+                      borderTop: '1px solid #f1f5f9',
+                      paddingTop: '12px'
+                    }}>
+                      <button onClick={() => openEdit(room)} className="btn btn-outline btn-sm" title="Edit Kamar" style={{ padding: '6px 10px' }}>
+                        <Edit size={14} />
+                      </button>
+                      <button onClick={() => handleDelete(room.id)} className="btn btn-danger btn-sm" title="Hapus Kamar" style={{ padding: '6px 10px' }}>
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
           </div>
+          {rooms.length === 0 && (
+            <div className="card" style={{ textAlign: 'center', padding: 32, color: 'var(--text-light)' }}>
+              Belum ada kamar terdaftar
+            </div>
+          )}
         </div>
       )}
 
