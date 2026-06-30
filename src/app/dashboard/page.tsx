@@ -280,7 +280,7 @@ export default function DashboardPage() {
                     <td className="td-nominal">{formatRp(b.amount)}</td>
                     <td>{b.dueDate ? new Date(b.dueDate).toLocaleDateString('id-ID') : '-'}</td>
                     <td>
-                      <button className="btn btn-sm btn-outline" onClick={() => router.push('/pembayaran')}>
+                      <button className="btn btn-sm btn-outline" onClick={() => router.push('/tagihan')}>
                         Bayar
                       </button>
                     </td>

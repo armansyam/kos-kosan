@@ -58,7 +58,7 @@ export async function GET() {
         _sum: { amount: true },
       }),
       prisma.bill.count({
-        where: { status: 'belum_bayar', month: { lt: currentMonth } },
+        where: { status: 'belum_bayar', dueDate: { lt: today } },
       }),
       prisma.bill.count({
         where: {
