@@ -4,7 +4,7 @@ import { hash } from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  // Create admin user
+  // 1. Create admin user
   const hashedPassword = await hash('admin123', 12);
   await prisma.user.upsert({
     where: { email: 'admin@kos.com' },
@@ -16,66 +16,38 @@ async function main() {
     },
   });
 
-  // Create rooms A1-A5, B1-B5
-  const rooms = [
-    { name: 'A1', price: 800000, status: 'terisi' },
-    { name: 'A2', price: 800000, status: 'kosong' },
-    { name: 'A3', price: 900000, status: 'terisi' },
-    { name: 'A4', price: 900000, status: 'kosong' },
-    { name: 'A5', price: 1000000, status: 'menunggak' },
-    { name: 'B1', price: 1000000, status: 'terisi' },
-    { name: 'B2', price: 1200000, status: 'kosong' },
-    { name: 'B3', price: 1200000, status: 'terisi' },
-    { name: 'B4', price: 1500000, status: 'kosong' },
-    { name: 'B5', price: 1500000, status: 'terisi' },
+  // 2. Create 15 clean rooms (Lantai 1: A1-A5, Lantai 2: B1-B5, Lantai 3: C1-C5)
+  const floors = [
+    { name: '1', prefix: 'A' },
+    { name: '2', prefix: 'B' },
+    { name: '3', prefix: 'C' }
   ];
 
-  for (const room of rooms) {
-    await prisma.room.upsert({
-      where: { id: room.name.toLowerCase() },
-      update: {},
-      create: {
-        id: room.name.toLowerCase(),
-        ...room,
-      },
-    });
-  }
+  for (const floor of floors) {
+    for (let i = 1; i <= 5; i++) {
+      const roomName = `${floor.prefix}${i}`;
+      const roomId = roomName.toLowerCase();
+      
+      // Default price based on floor
+      let price = 800000;
+      if (floor.name === '2') price = 1000000;
+      if (floor.name === '3') price = 1200000;
 
-  // Create sample tenants for occupied rooms
-  const tenants = [
-    { fullName: 'Budi Santoso', whatsapp: '6281234567890', roomId: 'a1', monthlyPrice: 800000, dueDate: 5 },
-    { fullName: 'Siti Rahayu', whatsapp: '6281234567891', roomId: 'a3', monthlyPrice: 900000, dueDate: 10 },
-    { fullName: 'Ahmad Rizki', whatsapp: '6281234567892', roomId: 'a5', monthlyPrice: 1000000, dueDate: 1 },
-    { fullName: 'Dewi Lestari', whatsapp: '6281234567893', roomId: 'b1', monthlyPrice: 1000000, dueDate: 15 },
-    { fullName: 'Rudi Hermawan', whatsapp: '6281234567894', roomId: 'b3', monthlyPrice: 1200000, dueDate: 10 },
-    { fullName: 'Maya Sari', whatsapp: '6281234567895', roomId: 'b5', monthlyPrice: 1500000, dueDate: 20 },
-  ];
-
-  for (const tenant of tenants) {
-    const existing = await prisma.tenant.findFirst({ where: { roomId: tenant.roomId } });
-    if (!existing) {
-      await prisma.tenant.create({
-        data: {
-          ...tenant,
-          checkInDate: new Date('2026-01-01'),
-          active: true,
-        },
+      await prisma.room.upsert({
+        where: { id: roomId },
+        update: {},
+        create: {
+          id: roomId,
+          name: roomName,
+          floor: parseInt(floor.name),
+          price: price,
+          status: 'kosong'
+        }
       });
     }
   }
 
-  // Create sample electricity log
-  await prisma.electricityLog.create({
-    data: {
-      topupDate: new Date(),
-      nominal: 100000,
-      kwhAdded: 65.5,
-      currentKwh: 45.2,
-      estimatedDaysLeft: 15,
-    },
-  });
-
-  // Create default settings
+  // 3. Create default settings
   const existingSetting = await prisma.setting.findFirst();
   if (!existingSetting) {
     await prisma.setting.create({
@@ -92,18 +64,21 @@ async function main() {
         facebook: "",
         colorUtama: "#4F46E5",
         colorSidebar: "#0F172A",
+        rekening: "BCA: 123456789 a/n Arman Syam",
+        fasilitas: "WiFi Gratis,Parkir Luas,Keamanan 24 Jam,Air Bersih,Listrik Termasuk,Bersih & Nyaman"
       },
     });
   }
 
-  console.log('✅ Seed data created successfully');
+  console.log('✅ Production Seed data (Admin & 15 Clean Rooms) created successfully');
 }
 
 main()
-  .catch((e) => {
-    console.error(e);
-    process.exit(1);
-  })
-  .finally(async () => {
+  .then(async () => {
     await prisma.$disconnect();
+  })
+  .catch(async (e) => {
+    console.error(e);
+    await prisma.$disconnect();
+    process.exit(1);
   });
