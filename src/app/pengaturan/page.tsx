@@ -269,7 +269,7 @@ export default function PengaturanPage() {
           </div>
 
           {/* TEMA */}
-          <div className="card">
+          <div className="card" style={{ overflow: 'visible' }}>
             <div className="card-header">
               <div className="stat-icon purple"><Palette size={18} /></div>
               <h3>Tampilan Landing Page</h3>
