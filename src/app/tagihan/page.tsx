@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Plus, MessageCircle, Check } from 'lucide-react';
+import { Plus, MessageCircle, Check, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface Bill {
   id: string; tenantId: string; month: string; amount: number;
@@ -34,6 +34,11 @@ export default function TagihanPage() {
   const [autoForm, setAutoForm] = useState({ month: currentMonth });
   const [autoGenerating, setAutoGenerating] = useState(false);
   const [toast, setToast] = useState('');
+  const [expandedRooms, setExpandedRooms] = useState<Record<string, boolean>>({});
+
+  const toggleRoom = (roomId: string) => {
+    setExpandedRooms(prev => ({ ...prev, [roomId]: !prev[roomId] }));
+  };
 
   useEffect(() => { fetchAll(); }, []);
 
@@ -117,6 +122,25 @@ export default function TagihanPage() {
 
   const filtered = bills.filter(b => tab === 'semua' ? true : b.status === tab);
 
+  // Group bills by Room Accordion
+  const billsByRoom = filtered.reduce((acc, bill) => {
+    const roomName = bill.tenant?.room?.name || 'Lainnya';
+    const roomId = roomName.toLowerCase().replace(/\s+/g, '-');
+    if (!acc[roomId]) {
+      acc[roomId] = {
+        roomId,
+        roomName,
+        tenantName: bill.tenant?.fullName || 'Tanpa Nama',
+        whatsapp: bill.tenant?.whatsapp || '',
+        bills: [],
+      };
+    }
+    acc[roomId].bills.push(bill);
+    return acc;
+  }, {} as Record<string, { roomId: string; roomName: string; tenantName: string; whatsapp: string; bills: Bill[] }>);
+
+  const roomGroups = Object.values(billsByRoom).sort((a, b) => a.roomName.localeCompare(b.roomName));
+
   const tabs: { key: TabType; label: string; count: number }[] = [
     { key:'semua', label:'Semua', count: bills.length },
     { key:'belum_bayar', label:'Belum Bayar', count: bills.filter(b=>b.status==='belum_bayar').length },
@@ -163,94 +187,120 @@ export default function TagihanPage() {
         ))}
       </div>
 
-      <div className="card">
+      <div style={{ marginBottom: 20 }}>
         {loading ? (
           <div style={{ textAlign:'center', padding:40 }}><div className="spinner" style={{ borderTopColor:'var(--primary)', width:36, height:36, margin:'0 auto' }} /></div>
         ) : (
-          <>
-            {/* Desktop Table */}
-            <div className="table-desktop tagihan-table">
-              <table>
-                <thead>
-                  <tr>
-                    <th>Kamar</th><th>Penghuni</th><th>Bulan</th><th>Nominal</th>
-                    <th>Jatuh Tempo</th><th>Status</th><th style={{ textAlign:'right' }}>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filtered.map(bill => (
-                    <tr key={bill.id} onClick={() => setShowDetailModal(bill)} style={{ cursor:'pointer' }}>
-                      <td><strong>{bill.tenant.room.name}</strong></td>
-                      <td>{bill.tenant.fullName}</td>
-                      <td>{bill.month}</td>
-                      <td>{formatRp(bill.amount)}</td>
-                      <td>{formatDate(bill.dueDate)}</td>
-                      <td>{getStatusBadge(bill)}</td>
-                      <td onClick={e => e.stopPropagation()}>
-                        <div style={{ display:'flex', gap:6, justifyContent:'flex-end' }}>
-                          <button onClick={() => openWhatsApp(bill)} className="btn btn-whatsapp btn-sm" title="Kirim WA">
-                            <MessageCircle size={14} />
-                          </button>
-                          {bill.status !== 'lunas' && (
-                            <button onClick={() => { setShowPayModal(bill); setPayForm({ paymentDate: new Date().toISOString().split('T')[0], paymentMethod:'transfer', amount: bill.amount, notes:'' }); }}
-                              className="btn btn-success btn-sm">
-                              <Check size={14} /> Bayar
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {filtered.length === 0 && (
-                    <tr><td colSpan={7} style={{ textAlign:'center', padding:32, color:'var(--text-light)' }}>Tidak ada data tagihan</td></tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
+          <div className="room-groups-list">
+            {roomGroups.map(group => {
+              const isExpanded = expandedRooms[group.roomId];
+              const unpaidBills = group.bills.filter(b => b.status === 'belum_bayar');
+              const isOverdue = unpaidBills.some(b => getDaysLeft(b.dueDate) < 0);
+              
+              return (
+                <div key={group.roomId} className="room-accordion-item" style={{
+                  background: 'white',
+                  border: '1px solid var(--border)',
+                  borderRadius: '16px',
+                  marginBottom: '14px',
+                  overflow: 'hidden',
+                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                  transition: 'all 0.2s'
+                }}>
+                  {/* ACCORDION HEADER */}
+                  <div 
+                    onClick={() => toggleRoom(group.roomId)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      padding: '16px 20px',
+                      cursor: 'pointer',
+                      background: isExpanded ? '#f8fafc' : 'white',
+                      borderBottom: isExpanded ? '1px solid var(--border)' : 'none',
+                      transition: 'background-color 0.2s'
+                    }}
+                  >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
+                      <div style={{
+                        background: isOverdue ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)' : unpaidBills.length > 0 ? 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)' : 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)',
+                        color: isOverdue ? '#991b1b' : unpaidBills.length > 0 ? '#92400e' : '#166534',
+                        fontWeight: 800,
+                        fontSize: '14px',
+                        padding: '6px 14px',
+                        borderRadius: '10px',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
+                      }}>
+                        Kamar {group.roomName}
+                      </div>
+                      <div>
+                        <span style={{ fontWeight: 700, fontSize: '15px', color: '#1e293b', display: 'block' }}>{group.tenantName}</span>
+                        <span style={{ fontSize: '12px', color: '#64748b' }}>{group.bills.length} Tagihan Terdaftar</span>
+                      </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
+                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                        {isOverdue && (
+                          <span className="badge badge-danger">Menunggak</span>
+                        )}
+                        {unpaidBills.length > 0 ? (
+                          <span className="badge badge-warning">{unpaidBills.length} Belum Bayar</span>
+                        ) : (
+                          <span className="badge badge-success">Lunas</span>
+                        )}
+                      </div>
+                      {isExpanded ? <ChevronUp size={18} color="#64748b" /> : <ChevronDown size={18} color="#64748b" />}
+                    </div>
+                  </div>
 
-            {/* Mobile Cards */}
-            <div className="tagihan-cards">
-              {filtered.length === 0 ? (
-                <div style={{ textAlign:'center', padding:32, color:'var(--text-light)' }}>Tidak ada data tagihan</div>
-              ) : filtered.map(bill => (
-                <div key={bill.id} className="tagihan-card" onClick={() => setShowDetailModal(bill)}>
-                  <div className="tagihan-card-header">
-                    <div className="tagihan-card-room">{bill.tenant.room.name}</div>
-                    {getStatusBadge(bill)}
-                  </div>
-                  <div className="tagihan-card-body">
-                    <div className="tagihan-card-row">
-                      <span className="tagihan-card-label">Penghuni</span>
-                      <span className="tagihan-card-value">{bill.tenant.fullName}</span>
+                  {/* ACCORDION CONTENT (BILL DETAILS) */}
+                  {isExpanded && (
+                    <div style={{ padding: '20px', background: '#f8fafc' }}>
+                      <div className="table-container" style={{ background: 'white', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                        <table style={{ margin: 0 }}>
+                          <thead>
+                            <tr style={{ background: '#f1f5f9' }}>
+                              <th style={{ padding: '12px 16px' }}>Bulan</th>
+                              <th style={{ padding: '12px 16px' }}>Nominal</th>
+                              <th style={{ padding: '12px 16px' }}>Jatuh Tempo</th>
+                              <th style={{ padding: '12px 16px' }}>Status</th>
+                              <th style={{ padding: '12px 16px', textAlign: 'right' }}>Aksi</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {group.bills.map(bill => (
+                              <tr key={bill.id} onClick={(e) => { e.stopPropagation(); setShowDetailModal(bill); }} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }}>
+                                <td style={{ padding: '12px 16px' }}><strong>{bill.month}</strong></td>
+                                <td style={{ padding: '12px 16px' }}>{formatRp(bill.amount)}</td>
+                                <td style={{ padding: '12px 16px' }}>{formatDate(bill.dueDate)}</td>
+                                <td style={{ padding: '12px 16px' }}>{getStatusBadge(bill)}</td>
+                                <td style={{ padding: '12px 16px' }} onClick={e => e.stopPropagation()}>
+                                  <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                                    <button onClick={(e) => { e.stopPropagation(); openWhatsApp(bill); }} className="btn btn-whatsapp btn-sm" title="Kirim WA">
+                                      <MessageCircle size={14} />
+                                    </button>
+                                    {bill.status !== 'lunas' && (
+                                      <button onClick={(e) => { e.stopPropagation(); setShowPayModal(bill); setPayForm({ paymentDate: new Date().toISOString().split('T')[0], paymentMethod:'transfer', amount: bill.amount, notes:'' }); }}
+                                        className="btn btn-success btn-sm">
+                                        <Check size={14} /> Bayar
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
                     </div>
-                    <div className="tagihan-card-row">
-                      <span className="tagihan-card-label">Bulan</span>
-                      <span className="tagihan-card-value">{bill.month}</span>
-                    </div>
-                    <div className="tagihan-card-row">
-                      <span className="tagihan-card-label">Nominal</span>
-                      <span className="tagihan-card-value" style={{ fontWeight:700, color:'var(--primary)' }}>{formatRp(bill.amount)}</span>
-                    </div>
-                    <div className="tagihan-card-row">
-                      <span className="tagihan-card-label">Jatuh Tempo</span>
-                      <span className="tagihan-card-value">{formatDate(bill.dueDate)}</span>
-                    </div>
-                  </div>
-                  <div className="tagihan-card-footer" onClick={e => e.stopPropagation()}>
-                    <button onClick={() => openWhatsApp(bill)} className="btn btn-whatsapp btn-sm">
-                      <MessageCircle size={14} /> WA
-                    </button>
-                    {bill.status !== 'lunas' && (
-                      <button onClick={() => { setShowPayModal(bill); setPayForm({ paymentDate: new Date().toISOString().split('T')[0], paymentMethod:'transfer', amount: bill.amount, notes:'' }); }}
-                        className="btn btn-success btn-sm">
-                        <Check size={14} /> Bayar
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
-              ))}
-            </div>
-          </>
+              );
+            })}
+            {roomGroups.length === 0 && (
+              <div className="card" style={{ textAlign:'center', padding:32, color:'var(--text-light)' }}>Tidak ada data tagihan</div>
+            )}
+          </div>
         )}
       </div>
 
