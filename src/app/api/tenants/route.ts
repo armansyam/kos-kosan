@@ -4,7 +4,13 @@ import { prisma } from '@/lib/prisma';
 export async function GET() {
   try {
     const tenants = await prisma.tenant.findMany({
-      include: { room: true },
+      include: {
+        room: true,
+        bills: {
+          include: { payments: true },
+          orderBy: { dueDate: 'desc' },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
     return NextResponse.json(tenants);

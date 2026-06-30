@@ -1,13 +1,15 @@
 'use client';
 import { useEffect, useState } from 'react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Plus, Edit, Trash2, MessageCircle, Phone, LogOut } from 'lucide-react';
+import { Plus, Edit, Trash2, MessageCircle, Phone, LogOut, Check } from 'lucide-react';
 
 interface Room { id: string; name: string; price: number; status: string; }
+interface Bill { id: string; month: string; amount: number; dueDate: string; status: string; payments: any[]; }
 interface Tenant {
   id: string; fullName: string; whatsapp: string; roomId: string;
   checkInDate: string; checkOutDate: string | null; monthlyPrice: number; dueDate: number;
   notes: string | null; active: boolean; room: Room;
+  bills?: Bill[];
 }
 
 export default function PenghuniPage() {
@@ -23,6 +25,10 @@ export default function PenghuniPage() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState('');
   const [showInactive, setShowInactive] = useState(false);
+
+  // Payment states
+  const [showPayModal, setShowPayModal] = useState<any | null>(null);
+  const [payForm, setPayForm] = useState({ paymentDate: '', paymentMethod: 'transfer', amount: 0, notes: '' });
 
   useEffect(() => { fetchData(); }, []);
 
@@ -98,6 +104,62 @@ export default function PenghuniPage() {
     window.open(`https://wa.me/${num}`, '_blank');
   }
 
+  async function handlePay(e: React.FormEvent) {
+    e.preventDefault();
+    if (!showPayModal) return;
+    try {
+      const res = await fetch('/api/payments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...payForm, billId: showPayModal.id, amount: payForm.amount || showPayModal.amount }),
+      });
+      if (res.ok) {
+        setShowPayModal(null);
+        showToast('Pembayaran berhasil dicatat');
+        // Fetch fresh tenants data
+        const tData = await fetch('/api/tenants').then(x=>x.json());
+        const tenantsList = Array.isArray(tData) ? tData : [];
+        setTenants(tenantsList);
+        const updated = tenantsList.find(x => x.id === selectedTenant?.id);
+        if (updated) setSelectedTenant(updated);
+      } else {
+        showToast('Gagal mencatat pembayaran');
+      }
+    } catch {
+      showToast('Error koneksi');
+    }
+  }
+
+  function getDaysLeft(dueDate: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const due = new Date(dueDate);
+    due.setHours(0, 0, 0, 0);
+    return Math.ceil((due.getTime() - today.getTime()) / (1000*60*60*24));
+  }
+
+  function getStatusBadge(bill: any) {
+    const days = getDaysLeft(bill.dueDate);
+    if (bill.status === 'lunas') return <span className="badge badge-success" style={{ fontSize: 11, padding: '3px 8px' }}><Check size={10} /> Lunas</span>;
+    if (bill.status === 'menunggak') return <span className="badge badge-danger" style={{ fontSize: 11, padding: '3px 8px' }}>Menunggak</span>;
+    return (
+      <span className={`badge ${days < 0 ? 'badge-danger' : days <= 3 ? 'badge-warning' : 'badge-info'}`} style={{ fontSize: 11, padding: '3px 8px' }}>
+        {days < 0 ? `Terlambat ${Math.abs(days)} hari` : `${days} hari lagi`}
+      </span>
+    );
+  }
+
+  function sendWhatsAppBill(bill: any, tenant: any) {
+    const name = tenant.fullName;
+    const room = tenant.room.name;
+    const month = bill.month;
+    const amount = bill.amount.toLocaleString('id-ID');
+    const due = new Date(bill.dueDate).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+    const wa = tenant.whatsapp.replace(/^0/, '62');
+    const msg = encodeURIComponent(`Halo Pak/Bu ${name},\nBerikut tagihan kos kamar ${room} untuk bulan ${month}.\n\nTotal Tagihan: Rp${amount}\nJatuh Tempo: ${due}\n\nTerima kasih 🙏`);
+    window.open(`https://wa.me/${wa}?text=${msg}`, '_blank');
+  }
+
   const activeTenants = tenants.filter(t => t.active);
   const inactiveTenants = tenants.filter(t => !t.active);
   const displayTenants = showInactive ? inactiveTenants : activeTenants;
@@ -105,208 +167,334 @@ export default function PenghuniPage() {
 
   return (
     <DashboardLayout>
-      <div style={{ display:'flex', gap:24 }}>
-        {/* SIDEBAR DETAIL */}
-        {selectedTenant && (
-          <div style={{ width:280, flexShrink:0 }}>
-            <div className="card" style={{ position:'sticky', top:96 }}>
-              <div className="card-header">
-                <button onClick={() => setSelectedTenant(null)} style={{ border:'none', background:'none', cursor:'pointer', display:'flex', alignItems:'center', gap:4, fontSize:13, color:'var(--text-secondary)', fontFamily:'inherit' }}>
-                  ← Kembali
-                </button>
-                <button onClick={() => openEdit(selectedTenant)} className="btn btn-outline btn-sm"><Edit size={14} /> Edit</button>
-              </div>
-              <div className="card-body">
-                <div style={{ textAlign:'center', marginBottom:20 }}>
-                  <div style={{ width:64, height:64, borderRadius:'50%', background:'linear-gradient(135deg, var(--primary), var(--primary-light))', display:'flex', alignItems:'center', justifyContent:'center', color:'white', fontSize:24, fontWeight:700, margin:'0 auto 12px' }}>
-                    {selectedTenant.fullName.charAt(0)}
-                  </div>
-                  <h3 style={{ fontSize:16, fontWeight:700 }}>{selectedTenant.fullName}</h3>
-                  <span className={`badge ${selectedTenant.active ? 'badge-success' : 'badge-gray'}`}>{selectedTenant.active ? 'Aktif' : 'Non-aktif'}</span>
-                  <p style={{ fontSize:13, color:'var(--text-secondary)', marginTop:4 }}>Kamar {selectedTenant.room.name}</p>
-                </div>
-                {[
-                  ['No. WhatsApp', selectedTenant.whatsapp],
-                  ['Tanggal Masuk', formatDate(selectedTenant.checkInDate)],
-                  ['Harga Sewa', formatRp(selectedTenant.monthlyPrice)+'/bulan'],
-                  ['Jatuh Tempo', `${selectedTenant.dueDate} setiap bulan`],
-                  ['Catatan', selectedTenant.notes || '-'],
-                ].map(([k,v]) => (
-                  <div key={k} style={{ padding:'10px 0', borderBottom:'1px solid var(--border)' }}>
-                    <p style={{ fontSize:11, color:'var(--text-secondary)', fontWeight:600, textTransform:'uppercase', marginBottom:2 }}>{k}</p>
-                    <p style={{ fontSize:13, fontWeight:500 }}>{v}</p>
-                  </div>
-                ))}
-                <div style={{ marginTop:16, display:'flex', gap:8, flexDirection:'column' }}>
-                  {selectedTenant.active && (
-                    <button onClick={() => handleCheckout(selectedTenant)} className="btn btn-danger">
-                      <LogOut size={16} /> Keluar dari Kos
-                    </button>
-                  )}
-                  <button onClick={() => openWhatsApp(selectedTenant.whatsapp, selectedTenant.fullName)} className="btn btn-whatsapp">
-                    <MessageCircle size={16} /> Chat WhatsApp
-                  </button>
-                  {!selectedTenant.active && (
-                    <button onClick={() => handleDelete(selectedTenant.id)} className="btn btn-danger btn-sm">
-                      <Trash2 size={14} /> Hapus Permanen
-                    </button>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* MAIN CONTENT */}
-        <div style={{ flex:1, minWidth:0 }}>
-          <div className="page-header">
-            <div>
-              <h2>Penghuni</h2>
-              <p style={{ fontSize:13, color:'var(--text-secondary)', marginTop:2 }}>
-                {activeTenants.length} aktif · {inactiveTenants.length} sudah keluar
-              </p>
-            </div>
-            <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-              <button onClick={() => setShowInactive(!showInactive)} className={`btn ${showInactive ? 'btn-outline' : 'btn-outline'}`} style={{ fontSize:13 }}>
-                {showInactive ? '← Kembali ke Aktif' : 'Lihat yang Sudah Keluar'}
-              </button>
-              {!showInactive && (
-                <button onClick={() => { setShowModal(true); setEditingTenant(null); resetForm(); }} className="btn btn-primary">
-                  <Plus size={16} /> Tambah Penghuni
-                </button>
-              )}
-            </div>
-          </div>
-
-          {loading ? (
-            <div style={{ textAlign:'center', padding:60 }}><div className="spinner" style={{ borderTopColor:'var(--primary)', width:40, height:40, margin:'0 auto' }} /></div>
-          ) : (
-            <div className="room-groups-list">
-              <div className="dash-room-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
-                {displayTenants.map(tenant => {
-                  const cardColor = tenant.active ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)' : '#94A3B8';
-                  
-                  return (
-                    <div 
-                      key={tenant.id}
-                      onClick={() => setSelectedTenant(tenant)}
-                      className={`dash-room-card ${selectedTenant?.id === tenant.id ? 'active-room-card' : ''}`}
-                      style={{
-                        background: 'white',
-                        borderRadius: '16px',
-                        border: selectedTenant?.id === tenant.id ? '2px solid var(--primary)' : '1px solid var(--border)',
-                        overflow: 'hidden',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s ease',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                        display: 'flex',
-                        flexDirection: 'column'
-                      }}
-                    >
-                      {/* Color Bar / Status bar */}
-                      <div style={{ height: '6px', background: cardColor }} />
-                      
-                      {/* Card Body */}
-                      <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
-                        {/* Header Info */}
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
-                          <span style={{
-                            background: tenant.active ? '#eef2ff' : '#f1f5f9',
-                            color: tenant.active ? 'var(--primary)' : '#475569',
-                            fontSize: '14px',
-                            fontWeight: 800,
-                            padding: '4px 12px',
-                            borderRadius: '8px',
-                            border: tenant.active ? '1px solid #e0e7ff' : '1px solid #e2e8f0'
-                          }}>
-                            Kamar {tenant.room.name}
-                          </span>
-                          <span className={`badge ${tenant.active ? 'badge-success' : 'badge-gray'}`}>
-                            {tenant.active ? 'Aktif' : 'Keluar'}
-                          </span>
-                        </div>
-
-                        {/* Tenant Name */}
-                        <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 12px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <div style={{
-                            width: '28px',
-                            height: '28px',
-                            borderRadius: '50%',
-                            background: tenant.active ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)' : '#94A3B8',
-                            color: 'white',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '12px',
-                            fontWeight: 700,
-                            flexShrink: 0
-                          }}>
-                            {tenant.fullName.charAt(0)}
-                          </div>
-                          {tenant.fullName}
-                        </h4>
-
-                        {/* Tenant Details */}
-                        <div style={{ fontSize: '13px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px', flex: 1 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#94a3b8' }}>WhatsApp</span>
-                            <span style={{ fontWeight: 500 }}>{tenant.whatsapp}</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#94a3b8' }}>Harga / Bulan</span>
-                            <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{formatRp(tenant.monthlyPrice)}</span>
-                          </div>
-                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <span style={{ color: '#94a3b8' }}>Jatuh Tempo</span>
-                            <span style={{ fontWeight: 500 }}>
-                              {tenant.checkOutDate 
-                                ? `Keluar ${new Date(tenant.checkOutDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}`
-                                : `Tgl ${tenant.dueDate}`
-                              }
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Action buttons footer */}
-                        <div onClick={(e) => e.stopPropagation()} style={{
-                          display: 'flex',
-                          gap: '8px',
-                          justifyContent: 'flex-end',
-                          borderTop: '1px solid #f1f5f9',
-                          paddingTop: '12px'
-                        }}>
-                          <button onClick={() => openWhatsApp(tenant.whatsapp, tenant.fullName)} className="btn btn-whatsapp btn-sm" title="WhatsApp" style={{ padding: '6px 10px' }}>
-                            <MessageCircle size={14} />
-                          </button>
-                          {tenant.active && (
-                            <button onClick={() => openEdit(tenant)} className="btn btn-outline btn-sm" style={{ padding: '6px 10px' }}>
-                              <Edit size={14} />
-                            </button>
-                          )}
-                          {tenant.active ? (
-                            <button onClick={() => handleCheckout(tenant)} className="btn btn-danger btn-sm" title="Keluar" style={{ padding: '6px 10px' }}>
-                              <LogOut size={14} />
-                            </button>
-                          ) : (
-                            <button onClick={() => handleDelete(tenant.id)} className="btn btn-danger btn-sm" title="Hapus Permanen" style={{ padding: '6px 10px' }}>
-                              <Trash2 size={14} />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              {displayTenants.length === 0 && (
-                <div className="card" style={{ textAlign:'center', padding:32, color:'var(--text-light)' }}>
-                  {showInactive ? 'Belum ada penghuni yang keluar' : 'Belum ada penghuni aktif'}
-                </div>
-              )}
-            </div>
+      {/* MAIN CONTENT */}
+      <div className="page-header">
+        <div>
+          <h2>Penghuni</h2>
+          <p style={{ fontSize:13, color:'var(--text-secondary)', marginTop:2 }}>
+            {activeTenants.length} aktif · {inactiveTenants.length} sudah keluar
+          </p>
+        </div>
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          <button onClick={() => setShowInactive(!showInactive)} className="btn btn-outline" style={{ fontSize:13 }}>
+            {showInactive ? '← Kembali ke Aktif' : 'Lihat yang Sudah Keluar'}
+          </button>
+          {!showInactive && (
+            <button onClick={() => { setShowModal(true); setEditingTenant(null); resetForm(); }} className="btn btn-primary">
+              <Plus size={16} /> Tambah Penghuni
+            </button>
           )}
         </div>
       </div>
+
+      {loading ? (
+        <div style={{ textAlign:'center', padding:60 }}><div className="spinner" style={{ borderTopColor:'var(--primary)', width:40, height:40, margin:'0 auto' }} /></div>
+      ) : (
+        <div className="room-groups-list">
+          <div className="dash-room-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+            {displayTenants.map(tenant => {
+              const cardColor = tenant.active ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)' : '#94A3B8';
+              
+              return (
+                <div 
+                  key={tenant.id}
+                  onClick={() => setSelectedTenant(tenant)}
+                  className={`dash-room-card ${selectedTenant?.id === tenant.id ? 'active-room-card' : ''}`}
+                  style={{
+                    background: 'white',
+                    borderRadius: '16px',
+                    border: selectedTenant?.id === tenant.id ? '2px solid var(--primary)' : '1px solid var(--border)',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                    display: 'flex',
+                    flexDirection: 'column'
+                  }}
+                >
+                  {/* Color Bar / Status bar */}
+                  <div style={{ height: '6px', background: cardColor }} />
+                  
+                  {/* Card Body */}
+                  <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                    {/* Header Info */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '14px' }}>
+                      <span style={{
+                        background: tenant.active ? '#eef2ff' : '#f1f5f9',
+                        color: tenant.active ? 'var(--primary)' : '#475569',
+                        fontSize: '14px',
+                        fontWeight: 800,
+                        padding: '4px 12px',
+                        borderRadius: '8px',
+                        border: tenant.active ? '1px solid #e0e7ff' : '1px solid #e2e8f0'
+                      }}>
+                        Kamar {tenant.room.name}
+                      </span>
+                      <span className={`badge ${tenant.active ? 'badge-success' : 'badge-gray'}`}>
+                        {tenant.active ? 'Aktif' : 'Keluar'}
+                      </span>
+                    </div>
+
+                    {/* Tenant Name */}
+                    <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 12px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '50%',
+                        background: tenant.active ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)' : '#94A3B8',
+                        color: 'white',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: '12px',
+                        fontWeight: 700,
+                        flexShrink: 0
+                      }}>
+                        {tenant.fullName.charAt(0)}
+                      </div>
+                      {tenant.fullName}
+                    </h4>
+
+                    {/* Tenant Details */}
+                    <div style={{ fontSize: '13px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px', flex: 1 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#94a3b8' }}>WhatsApp</span>
+                        <span style={{ fontWeight: 500 }}>{tenant.whatsapp}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#94a3b8' }}>Harga / Bulan</span>
+                        <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{formatRp(tenant.monthlyPrice)}</span>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                        <span style={{ color: '#94a3b8' }}>Jatuh Tempo</span>
+                        <span style={{ fontWeight: 500 }}>
+                          {tenant.checkOutDate 
+                            ? `Keluar ${new Date(tenant.checkOutDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}`
+                            : `Tgl ${tenant.dueDate}`
+                          }
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Action buttons footer */}
+                    <div onClick={(e) => e.stopPropagation()} style={{
+                      display: 'flex',
+                      gap: '8px',
+                      justifyContent: 'flex-end',
+                      borderTop: '1px solid #f1f5f9',
+                      paddingTop: '12px'
+                    }}>
+                      <button onClick={() => openWhatsApp(tenant.whatsapp, tenant.fullName)} className="btn btn-whatsapp btn-sm" title="WhatsApp" style={{ padding: '6px 10px' }}>
+                        <MessageCircle size={14} />
+                      </button>
+                      {tenant.active && (
+                        <button onClick={() => openEdit(tenant)} className="btn btn-outline btn-sm" style={{ padding: '6px 10px' }}>
+                          <Edit size={14} />
+                        </button>
+                      )}
+                      {tenant.active ? (
+                        <button onClick={() => handleCheckout(tenant)} className="btn btn-danger btn-sm" title="Keluar" style={{ padding: '6px 10px' }}>
+                          <LogOut size={14} />
+                        </button>
+                      ) : (
+                        <button onClick={() => handleDelete(tenant.id)} className="btn btn-danger btn-sm" title="Hapus Permanen" style={{ padding: '6px 10px' }}>
+                          <Trash2 size={14} />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {displayTenants.length === 0 && (
+            <div className="card" style={{ textAlign:'center', padding:32, color:'var(--text-light)' }}>
+              {showInactive ? 'Belum ada penghuni yang keluar' : 'Belum ada penghuni aktif'}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* DETAIL MODAL OVERLAY */}
+      {selectedTenant && (
+        <div className="modal-overlay" onClick={() => setSelectedTenant(null)}>
+          <div className="modal" style={{ maxWidth: 640, width: '95%' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Detail & Tagihan Penghuni</h3>
+              <button className="modal-close" onClick={() => setSelectedTenant(null)}>✕</button>
+            </div>
+            <div className="modal-body" style={{ maxHeight: '75vh', overflowY: 'auto' }}>
+              
+              {/* Profile Card & Info grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', marginBottom: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)' }}>
+                  <div style={{
+                    width: 52,
+                    height: 52,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, var(--primary), var(--primary-light))',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: 'white',
+                    fontSize: 20,
+                    fontWeight: 700,
+                    flexShrink: 0
+                  }}>
+                    {selectedTenant.fullName.charAt(0)}
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 4px 0' }}>{selectedTenant.fullName}</h3>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                      <span className={`badge ${selectedTenant.active ? 'badge-success' : 'badge-gray'}`}>
+                        {selectedTenant.active ? 'Aktif' : 'Non-aktif'}
+                      </span>
+                      <span style={{ fontSize: 13, color: '#475569', fontWeight: 600 }}>Kamar {selectedTenant.room.name}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
+                  {[
+                    ['No. WhatsApp', selectedTenant.whatsapp],
+                    ['Tanggal Masuk', formatDate(selectedTenant.checkInDate)],
+                    ['Harga Sewa', formatRp(selectedTenant.monthlyPrice) + '/bulan'],
+                    ['Jatuh Tempo', `Setiap tanggal ${selectedTenant.dueDate}`],
+                    ['Catatan', selectedTenant.notes || '-'],
+                  ].map(([k, v]) => (
+                    <div key={k} style={{ padding: '8px 12px', background: 'white', borderRadius: '8px', border: '1px solid #f1f5f9' }}>
+                      <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600, display: 'block', textTransform: 'uppercase', marginBottom: 2 }}>{k}</span>
+                      <span style={{ fontSize: 13, fontWeight: 500, color: '#1e293b' }}>{v}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Billing History Section */}
+              <div style={{ borderTop: '2px dashed var(--border)', paddingTop: '20px' }}>
+                <h4 style={{ fontSize: '15px', fontWeight: 700, marginBottom: '14px', color: '#0f172a', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span>Riwayat Tagihan Bulanan</span>
+                  <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 400 }}>
+                    {selectedTenant.bills?.length || 0} tagihan
+                  </span>
+                </h4>
+
+                <div className="table-container" style={{ borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden' }}>
+                  <table style={{ margin: 0, minWidth: '100%' }}>
+                    <thead>
+                      <tr style={{ background: '#f1f5f9' }}>
+                        <th style={{ padding: '10px 14px', fontSize: '12px' }}>Bulan</th>
+                        <th style={{ padding: '10px 14px', fontSize: '12px' }}>Nominal</th>
+                        <th style={{ padding: '10px 14px', fontSize: '12px' }}>Status</th>
+                        <th style={{ padding: '10px 14px', fontSize: '12px', textAlign: 'right' }}>Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedTenant.bills && selectedTenant.bills.length > 0 ? (
+                        selectedTenant.bills.map((bill: any) => (
+                          <tr key={bill.id} style={{ borderBottom: '1px solid #f1f5f9' }}>
+                            <td style={{ padding: '10px 14px', fontSize: '13px' }}><strong>{bill.month}</strong></td>
+                            <td style={{ padding: '10px 14px', fontSize: '13px' }}>{formatRp(bill.amount)}</td>
+                            <td style={{ padding: '10px 14px', fontSize: '13px' }}>{getStatusBadge(bill)}</td>
+                            <td style={{ padding: '10px 14px' }}>
+                              <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                                <button onClick={() => sendWhatsAppBill(bill, selectedTenant)} className="btn btn-whatsapp btn-sm" title="Kirim Pengingat WA" style={{ padding: '4px 8px' }}>
+                                  <MessageCircle size={12} />
+                                </button>
+                                {bill.status !== 'lunas' && (
+                                  <button onClick={() => {
+                                    setShowPayModal(bill);
+                                    setPayForm({
+                                      paymentDate: new Date().toISOString().split('T')[0],
+                                      paymentMethod: 'transfer',
+                                      amount: bill.amount,
+                                      notes: ''
+                                    });
+                                  }} className="btn btn-success btn-sm" style={{ padding: '4px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                                    <Check size={12} /> Bayar
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        ))
+                      ) : (
+                        <tr>
+                          <td colSpan={4} style={{ textAlign: 'center', padding: '20px', color: 'var(--text-light)', fontSize: '13px' }}>
+                            Belum ada tagihan terdaftar untuk penghuni ini.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Checkout / Hapus actions at bottom of modal body */}
+              <div style={{ marginTop: '24px', display: 'flex', gap: '10px' }}>
+                {selectedTenant.active ? (
+                  <button onClick={() => { handleCheckout(selectedTenant); setSelectedTenant(null); }} className="btn btn-danger" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <LogOut size={16} /> Keluar dari Kos
+                  </button>
+                ) : (
+                  <button onClick={() => { handleDelete(selectedTenant.id); setSelectedTenant(null); }} className="btn btn-danger" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <Trash2 size={16} /> Hapus Permanen
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button onClick={() => { openEdit(selectedTenant); setSelectedTenant(null); }} className="btn btn-outline" style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Edit size={14} /> Edit Data
+              </button>
+              <button className="btn btn-primary" onClick={() => setSelectedTenant(null)}>Tutup</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL BAYAR */}
+      {showPayModal && (
+        <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={() => setShowPayModal(null)}>
+          <div className="modal" style={{ maxWidth: 420 }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Catat Pembayaran</h3>
+              <button className="modal-close" onClick={() => setShowPayModal(null)}>✕</button>
+            </div>
+            <form onSubmit={handlePay}>
+              <div className="modal-body">
+                <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, marginBottom: 16, fontSize: 13, border: '1px solid var(--border)' }}>
+                  <p style={{ margin: '0 0 4px 0' }}>Bulan: <strong>{showPayModal.month}</strong></p>
+                  <p style={{ margin: 0 }}>Nominal Tagihan: <strong style={{ color: 'var(--primary)' }}>{formatRp(showPayModal.amount)}</strong></p>
+                </div>
+                <div className="form-group">
+                  <label>Tanggal Pembayaran</label>
+                  <input className="form-input" type="date" value={payForm.paymentDate} onChange={e => setPayForm({ ...payForm, paymentDate: e.target.value })} required />
+                </div>
+                <div className="form-group">
+                  <label>Metode Pembayaran</label>
+                  <select className="form-select" value={payForm.paymentMethod} onChange={e => setPayForm({ ...payForm, paymentMethod: e.target.value })}>
+                    <option value="transfer">Transfer Bank</option>
+                    <option value="cash">Tunai (Cash)</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Jumlah Bayar (Rp)</label>
+                  <input className="form-input" type="number" value={payForm.amount} onChange={e => setPayForm({ ...payForm, amount: parseInt(e.target.value) })} required />
+                </div>
+                <div className="form-group">
+                  <label>Catatan Pembayaran</label>
+                  <input className="form-input" type="text" value={payForm.notes} onChange={e => setPayForm({ ...payForm, notes: e.target.value })} placeholder="Nama pengirim, bank asal, dll..." />
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-outline" onClick={() => setShowPayModal(null)}>Batal</button>
+                <button type="submit" className="btn btn-success">Sudah Bayar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* MODAL PENGHUNI */}
       {showModal && (
