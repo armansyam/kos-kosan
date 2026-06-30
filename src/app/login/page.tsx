@@ -11,6 +11,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState<any>(null);
+  const [loadingSettings, setLoadingSettings] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
@@ -24,7 +25,9 @@ export default function LoginPage() {
             document.documentElement.style.setProperty('--primary-dark', data.colorUtama + 'dd');
           }
         }
-      }).catch(() => {});
+      })
+      .catch(() => {})
+      .finally(() => setLoadingSettings(false));
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,6 +49,21 @@ export default function LoginPage() {
       router.refresh();
     }
   };
+
+  if (loadingSettings) {
+    return (
+      <div className="login-page">
+        <div className="login-bg" />
+        <div className="login-card" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 380 }}>
+          <div style={{
+            width: 36, height: 36, border: '3px solid #e2e8f0',
+            borderTopColor: 'var(--primary, #4F46E5)', borderRadius: '50%',
+            animation: 'spin 0.7s linear infinite'
+          }} />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="login-page">
