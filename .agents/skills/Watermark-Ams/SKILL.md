@@ -7,6 +7,11 @@ description: "Memasang watermark developer melayang (floating credit bubble) den
 
 Panduan ini digunakan untuk menyisipkan tanda tangan (watermark) pembuat aplikasi di setiap sistem web/dashboard yang didevelop untuk user dengan inisial/logo AMS melayang transparan.
 
+## Langkah Pemasangan (Otomatis):
+1. **Salin File Logo**: Salin file `ams-logo.png` dari folder skill ini (`.agents/skills/Watermark-Ams/ams-logo.png`) ke folder `public/` proyek tujuan Anda dengan nama `ams-logo.png`.
+2. **Tambahkan CSS**: Salin kode CSS di bagian **1. Gaya CSS** ke file CSS global proyek Anda (seperti `globals.css` atau `layout.css`).
+3. **Integrasikan Layout**: Sisipkan kode React di bagian **2. Struktur React Component** ke file layout utama/wrapper proyek Anda.
+
 ## 1. Gaya CSS (Tempatkan di CSS Global)
 ```css
 /* ── Developer Watermark ── */
@@ -95,8 +100,6 @@ Panduan ini digunakan untuk menyisipkan tanda tangan (watermark) pembuat aplikas
 ```
 
 ## 2. Struktur React Component (Sering diletakkan di Layout Utama)
-*Pastikan logo `ams-logo.png` sudah diletakkan di folder `public/`.*
-
 ```tsx
 import { useState } from 'react';
 
