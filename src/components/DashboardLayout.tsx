@@ -261,7 +261,6 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         className="dev-watermark-btn" 
         onClick={() => setShowDevOverlay(!showDevOverlay)}
         title="Developer Info"
-        style={{ position: 'relative' }}
       >
         <img 
           src="/ams-logo.png" 
