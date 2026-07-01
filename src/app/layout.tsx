@@ -40,8 +40,7 @@ export default function RootLayout({
         />
         {/* PWA Manifest — dinamis dari database */}
         <link rel="manifest" href="/api/manifest" />
-        {/* Favicon & Apple Touch Icon — mengikuti logo dari pengaturan */}
-        <link rel="icon" href="/api/manifest/icon?size=32" type="image/png" />
+        {/* Apple Touch Icon — mengikuti logo dari pengaturan */}
         <link rel="apple-touch-icon" href="/api/manifest/icon?size=192" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
