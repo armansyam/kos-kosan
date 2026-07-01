@@ -314,7 +314,7 @@ export default function PenghuniPage() {
         <div style={{ textAlign:'center', padding:60 }}><div className="spinner" style={{ borderTopColor:'var(--primary)', width:40, height:40, margin:'0 auto' }} /></div>
       ) : (
         <div className="room-groups-list">
-          <div className="dash-room-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '20px' }}>
+          <div className="dash-room-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
             {displayTenants.map(tenant => {
               const cardColor = tenant.active ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)' : '#94A3B8';
               
@@ -325,7 +325,7 @@ export default function PenghuniPage() {
                   className={`dash-room-card ${selectedTenant?.id === tenant.id ? 'active-room-card' : ''}`}
                   style={{
                     background: 'white',
-                    borderRadius: '16px',
+                    borderRadius: '12px',
                     border: selectedTenant?.id === tenant.id ? '2px solid var(--primary)' : '1px solid var(--border)',
                     overflow: 'hidden',
                     cursor: 'pointer',
@@ -336,53 +336,55 @@ export default function PenghuniPage() {
                   }}
                 >
                   {/* Color Bar / Status bar */}
-                  <div style={{ height: '6px', background: cardColor }} />
+                  <div style={{ height: '5px', background: cardColor }} />
                   
                   {/* Card Body */}
-                  <div style={{ padding: '20px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ padding: '14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     {/* Header Info */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                       <div style={{ display: 'flex', gap: '6px', alignItems: 'center' }}>
                         <span style={{
                           background: tenant.active ? '#eef2ff' : '#f1f5f9',
                           color: tenant.active ? 'var(--primary)' : '#475569',
-                          fontSize: '14px',
+                          fontSize: '12px',
                           fontWeight: 800,
-                          padding: '4px 12px',
-                          borderRadius: '8px',
+                          padding: '3px 10px',
+                          borderRadius: '6px',
                           border: tenant.active ? '1px solid #e0e7ff' : '1px solid #e2e8f0'
                         }}>
                           Kamar {tenant.room.name}
                         </span>
                         {getBillStatusBadge(tenant)}
                       </div>
-                      <span className={`badge ${tenant.active ? 'badge-success' : 'badge-gray'}`}>
+                      <span className={`badge ${tenant.active ? 'badge-success' : 'badge-gray'}`} style={{ fontSize: '10px', padding: '2px 6px' }}>
                         {tenant.active ? 'Aktif' : 'Keluar'}
                       </span>
                     </div>
 
                     {/* Tenant Name */}
-                    <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 12px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 8px 0', color: '#0f172a', display: 'flex', alignItems: 'center', gap: '6px' }}>
                       <div style={{
-                        width: '28px',
-                        height: '28px',
+                        width: '24px',
+                        height: '24px',
                         borderRadius: '50%',
                         background: tenant.active ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)' : '#94A3B8',
                         color: 'white',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: '12px',
+                        fontSize: '11px',
                         fontWeight: 700,
                         flexShrink: 0
                       }}>
                         {tenant.fullName.charAt(0)}
                       </div>
-                      {tenant.fullName}
+                      <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {tenant.fullName}
+                      </span>
                     </h4>
 
                     {/* Tenant Details */}
-                    <div style={{ fontSize: '13px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '16px', flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px', flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ color: '#94a3b8' }}>WhatsApp</span>
                         <span style={{ fontWeight: 500 }}>{tenant.whatsapp}</span>
@@ -405,26 +407,26 @@ export default function PenghuniPage() {
                     {/* Action buttons footer */}
                     <div onClick={(e) => e.stopPropagation()} style={{
                       display: 'flex',
-                      gap: '8px',
+                      gap: '6px',
                       justifyContent: 'flex-end',
                       borderTop: '1px solid #f1f5f9',
-                      paddingTop: '12px'
+                      paddingTop: '8px'
                     }}>
-                      <button onClick={() => openWhatsApp(tenant.whatsapp, tenant.fullName)} className="btn btn-whatsapp btn-sm" title="WhatsApp" style={{ padding: '6px 10px' }}>
-                        <MessageCircle size={14} />
+                      <button onClick={() => openWhatsApp(tenant.whatsapp, tenant.fullName)} className="btn btn-whatsapp btn-sm" title="WhatsApp" style={{ padding: '4px 8px', height: '28px', width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <MessageCircle size={13} />
                       </button>
                       {tenant.active && (
-                        <button onClick={() => openEdit(tenant)} className="btn btn-outline btn-sm" style={{ padding: '6px 10px' }}>
-                          <Edit size={14} />
+                        <button onClick={() => openEdit(tenant)} className="btn btn-outline btn-sm" style={{ padding: '4px 8px', height: '28px', width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Edit size={13} />
                         </button>
                       )}
                       {tenant.active ? (
-                        <button onClick={() => handleCheckout(tenant)} className="btn btn-danger btn-sm" title="Keluar" style={{ padding: '6px 10px' }}>
-                          <LogOut size={14} />
+                        <button onClick={() => handleCheckout(tenant)} className="btn btn-danger btn-sm" title="Keluar" style={{ padding: '4px 8px', height: '28px', width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <LogOut size={13} />
                         </button>
                       ) : (
-                        <button onClick={() => handleDelete(tenant.id)} className="btn btn-danger btn-sm" title="Hapus Permanen" style={{ padding: '6px 10px' }}>
-                          <Trash2 size={14} />
+                        <button onClick={() => handleDelete(tenant.id)} className="btn btn-danger btn-sm" title="Hapus Permanen" style={{ padding: '4px 8px', height: '28px', width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Trash2 size={13} />
                         </button>
                       )}
                     </div>
