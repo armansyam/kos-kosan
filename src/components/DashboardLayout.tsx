@@ -184,7 +184,9 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
                 <div className="topbar-user-name">
                   {session?.user?.name ?? 'Admin'}
                 </div>
-                <span className="topbar-user-role">Pemilik Kos</span>
+                <span className="topbar-user-role">
+                  {(session?.user as any)?.role === 'super_admin' ? 'Pemilik Kos' : 'Staff / Kasir'}
+                </span>
               </div>
             </div>
           </div>
