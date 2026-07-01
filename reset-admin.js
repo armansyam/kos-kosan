@@ -4,29 +4,29 @@ const bcrypt = require('bcryptjs');
 const prisma = new PrismaClient();
 
 async function reset() {
-  console.log('🔄 Mereset akun admin ke default (admin@ams.com / admin123)...');
+  console.log('🔄 Mereset akun super admin ke default (admin@super.com / superadmin)...');
   
-  const hashedPassword = await bcrypt.hash('admin123', 12);
+  const hashedPassword = await bcrypt.hash('superadmin', 12);
   
-  // Upsert the admin user with email admin@ams.com
+  // Upsert the admin user with email admin@super.com
   await prisma.user.upsert({
-    where: { email: 'admin@ams.com' },
+    where: { email: 'admin@super.com' },
     update: {
       password: hashedPassword,
       name: 'Owner Kos',
       role: 'super_admin',
     },
     create: {
-      email: 'admin@ams.com',
+      email: 'admin@super.com',
       password: hashedPassword,
       name: 'Owner Kos',
       role: 'super_admin',
     },
   });
 
-  console.log('✅ Akun admin berhasil direset!');
-  console.log('📧 Email   : admin@ams.com');
-  console.log('🔑 Password: admin123');
+  console.log('✅ Akun super admin berhasil direset!');
+  console.log('📧 Email   : admin@super.com');
+  console.log('🔑 Password: superadmin');
 }
 
 reset()

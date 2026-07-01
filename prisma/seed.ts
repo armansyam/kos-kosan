@@ -4,30 +4,25 @@ import { hash } from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
+  // Clean existing users to prevent credential conflicts
+  await prisma.user.deleteMany({});
+
   // 1. Create super admin user (Owner/Root)
-  const hashedRootPassword = await hash('admin123', 12);
-  await prisma.user.upsert({
-    where: { email: 'admin@ams.com' },
-    update: {
-      role: 'super_admin'
-    },
-    create: {
-      email: 'admin@ams.com',
-      password: hashedRootPassword,
+  const hashedSuperPassword = await hash('superadmin', 12);
+  await prisma.user.create({
+    data: {
+      email: 'admin@super.com',
+      password: hashedSuperPassword,
       name: 'Owner Kos',
       role: 'super_admin'
     },
   });
 
-  // Create staff admin user (Kasir)
-  const hashedStaffPassword = await hash('kasir123', 12);
-  await prisma.user.upsert({
-    where: { email: 'kasir@kos.com' },
-    update: {
-      role: 'admin'
-    },
-    create: {
-      email: 'kasir@kos.com',
+  // 2. Create staff admin user (Kasir/Staff)
+  const hashedStaffPassword = await hash('admin123', 12);
+  await prisma.user.create({
+    data: {
+      email: 'admin@ams.com',
       password: hashedStaffPassword,
       name: 'Kasir Kos',
       role: 'admin'
