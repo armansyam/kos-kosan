@@ -11,6 +11,7 @@ services:
       - DATABASE_URL=file:./prisma/dev.db
       - NEXTAUTH_SECRET=kos-app-secret-key-change-in-production
       - NEXTAUTH_URL=http://localhost:3000
+      - AUTH_TRUST_HOST=true
       - ROOT_EMAIL=root@super.com
       - ROOT_PASSWORD=superrootpassword
     volumes:
