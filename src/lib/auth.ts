@@ -36,9 +36,21 @@ export const authOptions: NextAuthOptions = {
         }
 
         // 2. Normal check from database
-        const user = await prisma.user.findUnique({
-          where: { email: credentials.email },
+        const input = credentials.email.trim();
+        let user = await prisma.user.findUnique({
+          where: { email: input },
         });
+
+        // Fallback: If input doesn't have '@', look for email starting with input + '@'
+        if (!user && !input.includes('@')) {
+          user = await prisma.user.findFirst({
+            where: {
+              email: {
+                startsWith: input + '@',
+              },
+            },
+          });
+        }
 
         if (!user) return null;
 
