@@ -35,6 +35,7 @@ export default function TagihanPage() {
   const [autoGenerating, setAutoGenerating] = useState(false);
   const [toast, setToast] = useState('');
   const [expandedRooms, setExpandedRooms] = useState<Record<string, boolean>>({});
+  const [selectedRoomGroup, setSelectedRoomGroup] = useState<any | null>(null);
   const [settings, setSettings] = useState<any>(null);
 
   const toggleRoom = (roomId: string) => {
@@ -210,133 +211,102 @@ export default function TagihanPage() {
         ))}
       </div>
 
-      <div style={{ marginBottom: 20 }}>
-        {loading ? (
-          <div style={{ textAlign:'center', padding:40 }}><div className="spinner" style={{ borderTopColor:'var(--primary)', width:36, height:36, margin:'0 auto' }} /></div>
-        ) : (
-          <div className="room-groups-list">
-            {roomGroups.map(group => {
-              const isExpanded = expandedRooms[group.roomId];
-              const unpaidBills = group.bills.filter(b => b.status === 'belum_bayar');
-              const isOverdue = unpaidBills.some(b => getDaysLeft(b.dueDate) < 0);
-              
-              return (
-                <div key={group.roomId} className="room-accordion-item" style={{
-                  background: 'white',
-                  border: '1px solid var(--border)',
-                  borderRadius: '16px',
-                  marginBottom: '14px',
-                  overflow: 'hidden',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                  transition: 'all 0.2s'
-                }}>
-                  {/* ACCORDION HEADER */}
-                  <div 
-                    onClick={() => toggleRoom(group.roomId)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '16px 20px',
-                      cursor: 'pointer',
-                      background: isExpanded ? '#f8fafc' : 'white',
-                      borderBottom: isExpanded ? '1px solid var(--border)' : 'none',
-                      transition: 'background-color 0.2s'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', flexWrap: 'wrap' }}>
-                      <div style={{
-                        background: isOverdue ? 'linear-gradient(135deg, #fee2e2 0%, #fecaca 100%)' : unpaidBills.length > 0 ? 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)' : 'linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%)',
-                        color: isOverdue ? '#991b1b' : unpaidBills.length > 0 ? '#92400e' : '#166534',
-                        fontWeight: 800,
-                        fontSize: '14px',
-                        padding: '6px 14px',
-                        borderRadius: '10px',
-                        boxShadow: '0 2px 4px rgba(0,0,0,0.04)'
-                      }}>
-                        Kamar {group.roomName}
-                      </div>
-                      <div>
-                        <span style={{ fontWeight: 700, fontSize: '15px', color: '#1e293b', display: 'block' }}>{group.tenantName}</span>
-                        <span style={{ fontSize: '12px', color: '#64748b' }}>{group.bills.length} Tagihan Terdaftar</span>
-                      </div>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                      <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                        {isOverdue && (
-                          <span className="badge badge-danger">Menunggak</span>
-                        )}
-                        {unpaidBills.length > 0 ? (
-                          <span className="badge badge-warning">{unpaidBills.length} Belum Bayar</span>
-                        ) : (
-                          <span className="badge badge-success">Lunas</span>
-                        )}
-                      </div>
-                      {isExpanded ? <ChevronUp size={18} color="#64748b" /> : <ChevronDown size={18} color="#64748b" />}
-                    </div>
-                  </div>
+        <div style={{ marginBottom: 20 }}>
+          {loading ? (
+            <div style={{ textAlign:'center', padding:40 }}><div className="spinner" style={{ borderTopColor:'var(--primary)', width:36, height:36, margin:'0 auto' }} /></div>
+          ) : (
+            <div className="room-groups-list">
+              <div className="dash-room-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
+                {roomGroups.map(group => {
+                  const unpaidBills = group.bills.filter(b => b.status === 'belum_bayar');
+                  const isOverdue = unpaidBills.some(b => getDaysLeft(b.dueDate) < 0);
+                  
+                  // Hitung total sisa tunggakan di kartu
+                  const totalOwed = unpaidBills.reduce((sum, bill) => {
+                    const totalPaid = bill.payments?.reduce((s, p) => s + p.amount, 0) || 0;
+                    return sum + (bill.amount - totalPaid);
+                  }, 0);
 
-                  {/* ACCORDION CONTENT (BILL DETAILS) */}
-                  {isExpanded && (
-                    <div style={{ padding: '20px', background: '#f8fafc' }}>
-                      <div className="table-container" style={{ background: 'white', borderRadius: '12px', border: '1px solid var(--border)', overflow: 'hidden' }}>
-                        <table style={{ margin: 0 }}>
-                          <thead>
-                            <tr style={{ background: '#f1f5f9' }}>
-                              <th style={{ padding: '12px 16px' }}>Bulan</th>
-                              <th style={{ padding: '12px 16px' }}>Nominal</th>
-                              <th style={{ padding: '12px 16px' }}>Jatuh Tempo</th>
-                              <th style={{ padding: '12px 16px' }}>Status</th>
-                              <th style={{ padding: '12px 16px', textAlign: 'right' }}>Aksi</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {group.bills.map(bill => (
-                              <tr key={bill.id} onClick={(e) => { e.stopPropagation(); setShowDetailModal(bill); }} style={{ borderBottom: '1px solid #f1f5f9', cursor: 'pointer' }}>
-                                <td style={{ padding: '12px 16px' }}><strong>{bill.month}</strong></td>
-                                <td style={{ padding: '12px 16px' }}>{formatRp(bill.amount)}</td>
-                                <td style={{ padding: '12px 16px' }}>{formatDate(bill.dueDate)}</td>
-                                <td style={{ padding: '12px 16px' }}>{getStatusBadge(bill)}</td>
-                                <td style={{ padding: '12px 16px' }} onClick={e => e.stopPropagation()}>
-                                  <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                                    <button onClick={(e) => { e.stopPropagation(); openWhatsApp(bill); }} className="btn btn-whatsapp btn-sm" title="Kirim WA">
-                                      <MessageCircle size={14} />
-                                    </button>
-                                    {bill.status !== 'lunas' && (
-                                      <button onClick={(e) => {
-                                        e.stopPropagation();
-                                        const totalPaid = bill.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
-                                        const remaining = bill.amount - totalPaid;
-                                        setShowPayModal(bill);
-                                        setPayForm({
-                                          paymentDate: new Date().toISOString().split('T')[0],
-                                          paymentMethod: 'transfer',
-                                          amount: remaining,
-                                          notes: ''
-                                        });
-                                      }}
-                                        className="btn btn-success btn-sm">
-                                        <Check size={14} /> Bayar
-                                      </button>
-                                    )}
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
+                  const cardColor = isOverdue 
+                    ? 'linear-gradient(135deg, #ef4444 0%, #f87171 100%)'
+                    : unpaidBills.length > 0
+                      ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)'
+                      : 'linear-gradient(135deg, #94a3b8 0%, #cbd5e1 100%)';
+                  
+                  return (
+                    <div 
+                      key={group.roomId} 
+                      onClick={() => setSelectedRoomGroup(group)}
+                      className="dash-room-card"
+                      style={{
+                        background: 'white',
+                        borderRadius: '12px',
+                        border: '1px solid var(--border)',
+                        overflow: 'hidden',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
+                        display: 'flex',
+                        flexDirection: 'column'
+                      }}
+                    >
+                      {/* Status Color Bar */}
+                      <div style={{ height: '5px', background: cardColor }} />
+                      
+                      {/* Card Body */}
+                      <div style={{ padding: '14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                        {/* Header: Room Name */}
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                          <span style={{
+                            background: '#eef2ff',
+                            color: 'var(--primary)',
+                            fontSize: '12px',
+                            fontWeight: 800,
+                            padding: '3px 10px',
+                            borderRadius: '6px',
+                            border: '1px solid #e0e7ff'
+                          }}>
+                            Kamar {group.roomName}
+                          </span>
+                          <div style={{ display: 'flex', gap: '4px' }}>
+                            {isOverdue && <span className="badge badge-danger" style={{ fontSize: '10px', padding: '2px 6px' }}>Nunggak</span>}
+                            {unpaidBills.length > 0 ? (
+                              <span className="badge badge-warning" style={{ fontSize: '10px', padding: '2px 6px' }}>{unpaidBills.length} Bulan</span>
+                            ) : (
+                              <span className="badge badge-success" style={{ fontSize: '10px', padding: '2px 6px' }}>Lunas</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Tenant Name */}
+                        <h4 style={{ fontSize: '14px', fontWeight: 700, margin: '0 0 8px 0', color: '#0f172a' }}>
+                          {group.tenantName}
+                        </h4>
+
+                        {/* Outstanding Amount info */}
+                        <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <span style={{ color: '#94a3b8' }}>Total Tagihan</span>
+                            <span style={{ fontWeight: 500 }}>{group.bills.length} Bulan</span>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid #f1f5f9', paddingTop: '6px', marginTop: '2px' }}>
+                            <span style={{ color: '#94a3b8', fontWeight: 600 }}>Sisa Tagihan</span>
+                            <span style={{ fontWeight: 700, color: totalOwed > 0 ? '#dc2626' : '#16a34a' }}>
+                              {formatRp(totalOwed)}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-            {roomGroups.length === 0 && (
-              <div className="card" style={{ textAlign:'center', padding:32, color:'var(--text-light)' }}>Tidak ada data tagihan</div>
-            )}
-          </div>
-        )}
-      </div>
+                  );
+                })}
+              </div>
+              {roomGroups.length === 0 && (
+                <div className="card" style={{ textAlign:'center', padding:32, color:'var(--text-light)' }}>Tidak ada data tagihan</div>
+              )}
+            </div>
+          )}
+        </div>
 
       {/* MODAL BUAT TAGIHAN */}
       {showModal && (
@@ -384,7 +354,7 @@ export default function TagihanPage() {
 
       {/* MODAL BAYAR */}
       {showPayModal && (
-        <div className="modal-overlay" onClick={() => setShowPayModal(null)}>
+        <div className="modal-overlay" style={{ zIndex: 1100 }} onClick={() => setShowPayModal(null)}>
           <div className="modal modal-mobile" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>Catat Pembayaran</h3>
@@ -515,6 +485,107 @@ export default function TagihanPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DETAIL TAGIHAN KAMAR (PILIH BULAN) */}
+      {selectedRoomGroup && (
+        <div className="modal-overlay" onClick={() => setSelectedRoomGroup(null)}>
+          <div className="modal modal-mobile" style={{ maxWidth: 720, width: '95%' }} onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>Tagihan Kamar {selectedRoomGroup.roomName}</h3>
+              <button className="modal-close" onClick={() => setSelectedRoomGroup(null)}>✕</button>
+            </div>
+            <div className="modal-body" style={{ maxHeight: '70vh', overflowY: 'auto' }}>
+              <div style={{ background: '#f8fafc', padding: '12px 16px', borderRadius: '12px', border: '1px solid var(--border)', marginBottom: 20 }}>
+                <p style={{ fontSize: 13, fontWeight: 700, margin: '0 0 4px 0' }}>Penghuni: {selectedRoomGroup.tenantName}</p>
+                <p style={{ fontSize: 12, color: 'var(--text-secondary)', margin: 0 }}>Hubungi via WhatsApp: {selectedRoomGroup.whatsapp}</p>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                {selectedRoomGroup.bills && selectedRoomGroup.bills.length > 0 ? (
+                  selectedRoomGroup.bills.map((bill: any) => {
+                    const totalPaid = bill.payments?.reduce((s: number, p: any) => s + p.amount, 0) || 0;
+                    const remaining = bill.amount - totalPaid;
+                    return (
+                      <div 
+                        key={bill.id} 
+                        style={{
+                          background: 'white',
+                          border: '1px solid var(--border)',
+                          borderRadius: '10px',
+                          padding: '12px 16px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          gap: '16px',
+                          flexWrap: 'wrap',
+                          boxShadow: '0 1px 3px rgba(0,0,0,0.01)'
+                        }}
+                      >
+                        {/* Bulan & Detail Tagihan */}
+                        <div style={{ display: 'flex', gap: '16px', flex: '1 1 200px', flexWrap: 'wrap' }}>
+                          <div style={{ minWidth: '70px' }}>
+                            <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', fontWeight: 600, textTransform: 'uppercase', marginBottom: 2 }}>Bulan</span>
+                            <strong style={{ fontSize: '13px', color: '#1e293b' }}>{bill.month}</strong>
+                          </div>
+                          <div style={{ minWidth: '90px' }}>
+                            <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', fontWeight: 600, textTransform: 'uppercase', marginBottom: 2 }}>Tagihan</span>
+                            <span style={{ fontSize: '13px', color: '#334155', fontWeight: 500 }}>{formatRp(bill.amount)}</span>
+                          </div>
+                          <div style={{ minWidth: '90px' }}>
+                            <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', fontWeight: 600, textTransform: 'uppercase', marginBottom: 2 }}>Sisa</span>
+                            <span style={{ fontSize: '13px', fontWeight: 700, color: remaining > 0 ? '#dc2626' : '#16a34a' }}>
+                              {remaining > 0 ? formatRp(remaining) : 'Lunas'}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Jatuh Tempo & Status */}
+                        <div style={{ display: 'flex', gap: '16px', flex: '1 1 180px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <div style={{ minWidth: '100px' }}>
+                            <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', fontWeight: 600, textTransform: 'uppercase', marginBottom: 2 }}>Jatuh Tempo</span>
+                            <span style={{ fontSize: '12px', color: '#475569' }}>{formatDate(bill.dueDate)}</span>
+                          </div>
+                          <div style={{ minWidth: '80px' }}>
+                            <span style={{ fontSize: '10px', color: '#94a3b8', display: 'block', fontWeight: 600, textTransform: 'uppercase', marginBottom: 2 }}>Status</span>
+                            {getStatusBadge(bill)}
+                          </div>
+                        </div>
+
+                        {/* Tombol Aksi */}
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', justifyContent: 'flex-end', flex: '1 1 120px' }}>
+                          <button onClick={() => openWhatsApp(bill)} className="btn btn-whatsapp btn-sm" title="Kirim WA" style={{ padding: '6px 10px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <MessageCircle size={13} /> Tagih
+                          </button>
+                          {bill.status !== 'lunas' && (
+                            <button onClick={() => {
+                              setShowPayModal(bill);
+                              setPayForm({
+                                paymentDate: new Date().toISOString().split('T')[0],
+                                paymentMethod: 'transfer',
+                                amount: remaining,
+                                notes: ''
+                              });
+                            }} className="btn btn-success btn-sm" style={{ padding: '6px 12px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                              <Check size={13} /> Bayar
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div style={{ textAlign: 'center', padding: '24px', color: 'var(--text-light)', background: '#f8fafc', borderRadius: 8, border: '1px solid var(--border)' }}>
+                    Tidak ada tagihan terdaftar.
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-outline" onClick={() => setSelectedRoomGroup(null)}>Tutup</button>
+            </div>
           </div>
         </div>
       )}
