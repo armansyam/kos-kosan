@@ -40,23 +40,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  // Inisialisasi settings langsung dari cache localStorage
-  // agar sidebar tidak perlu skeleton setiap navigasi
-  const [settings, setSettings] = useState<any>(() => {
-    if (typeof window === 'undefined') return null;
+  const [settings, setSettings] = useState<any>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
     try {
       const cached = localStorage.getItem('kos-settings');
       if (cached) {
         const data = JSON.parse(cached);
-        // Apply CSS variables dari cache secara synchronous
+        setSettings(data);
+        // Apply CSS variables dari cache secara synchronous di client
         document.documentElement.style.setProperty('--primary', data.colorUtama || '#6366F1');
         document.documentElement.style.setProperty('--primary-dark', (data.colorUtama || '#6366F1') + 'dd');
         document.documentElement.style.setProperty('--sidebar-bg', data.colorSidebar || '#111827');
-        return data;
       }
     } catch {}
-    return null;
-  });
+  }, []);
+
   const [showDevOverlay, setShowDevOverlay] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [latestVersion, setLatestVersion] = useState<string | null>(null);
@@ -151,7 +152,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
       <aside className={`sidebar ${sidebarOpen ? 'sidebar-open' : ''}`}>
         {/* Brand */}
         <div className="sidebar-brand">
-          {!settings ? (
+          {!mounted || !settings ? (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
               <div className="skeleton-pulse" style={{
                 width: '36px', height: '36px', borderRadius: '8px',

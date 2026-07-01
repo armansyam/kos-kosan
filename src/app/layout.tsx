@@ -3,7 +3,6 @@ import './globals.css';
 import './dashboard-styles.css';
 import './landing-styles.css';
 import { SessionProviderWrapper } from '@/components/SessionProviderWrapper';
-import { FaviconUpdater } from '@/components/FaviconUpdater';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -40,8 +39,10 @@ export default function RootLayout({
         />
         {/* PWA Manifest — dinamis dari database */}
         <link rel="manifest" href="/api/manifest" />
-        {/* Apple Touch Icon — statis untuk performa, FaviconUpdater update dinamis jika ada logo */}
-        <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
+        {/* Favicon & Apple Touch Icon — dinamis mengikuti logo pengaturan dari database */}
+        <link rel="icon" href="/api/manifest/icon?size=32" type="image/png" />
+        <link rel="shortcut icon" href="/api/manifest/icon?size=32" type="image/png" />
+        <link rel="apple-touch-icon" href="/api/manifest/icon?size=192" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -61,8 +62,6 @@ export default function RootLayout({
       </head>
       <body>
         <SessionProviderWrapper>{children}</SessionProviderWrapper>
-        {/* Update favicon & title secara dinamis dari settings DB */}
-        <FaviconUpdater />
       </body>
     </html>
   );
