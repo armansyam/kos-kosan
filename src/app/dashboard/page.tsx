@@ -16,6 +16,7 @@ export default function DashboardPage() {
   const [upcomingBills, setUpcomingBills] = useState<any[]>([]);
   const [unpaidBills, setUnpaidBills] = useState<any[]>([]);
   const [userName, setUserName] = useState('Admin');
+  const [userRole, setUserRole] = useState('admin');
   const [activeTab, setActiveTab] = useState('ringkasan');
 
   // Electricity modal states
@@ -63,6 +64,7 @@ export default function DashboardPage() {
         if (sessionRes.ok) {
           const session = await sessionRes.json();
           if (session?.user?.name) setUserName(session.user.name);
+          if (session?.user?.role) setUserRole(session.user.role);
         }
       } catch (e) { console.error(e); }
     }
@@ -237,16 +239,18 @@ export default function DashboardPage() {
             <span className="kpi-sub">7 hari lagi</span>
           </div>
         </div>
-        <div className="dash-kpi">
-          <div className="kpi-icon" style={{ background: '#EEF2FF', color: '#6366F1' }}>
-            <Wallet size={20} />
+        {userRole === 'super_admin' && (
+          <div className="dash-kpi">
+            <div className="kpi-icon" style={{ background: '#EEF2FF', color: '#6366F1' }}>
+              <Wallet size={20} />
+            </div>
+            <div className="kpi-info">
+              <span className="kpi-label">Total Pendapatan</span>
+              <span className="kpi-value">{formatRp(stats.totalRevenue || 0)}</span>
+              <span className="kpi-sub">{stats.totalPayments ? stats.totalPayments + ' pembayaran' : '0 pembayaran'}</span>
+            </div>
           </div>
-          <div className="kpi-info">
-            <span className="kpi-label">Total Pendapatan</span>
-            <span className="kpi-value">{formatRp(stats.totalRevenue || 0)}</span>
-            <span className="kpi-sub">{stats.totalPayments ? stats.totalPayments + ' pembayaran' : '0 pembayaran'}</span>
-          </div>
-        </div>
+        )}
       </div>
 
       {/* ── ROW 1: Upcoming Bills + Status Kamar Donut ── */}

@@ -114,20 +114,27 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         {/* Nav */}
         <nav className="sidebar-nav">
           <span className="nav-section-label">Menu Utama</span>
-          {navItems.map((item) => {
-            const Icon = item.icon;
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`nav-item ${isActive ? 'active' : ''}`}
-              >
-                <Icon size={17} />
-                {item.label}
-              </Link>
-            );
-          })}
+          {navItems
+            .filter(item => {
+              if (item.href === '/laporan' && (session?.user as any)?.role !== 'super_admin') {
+                return false;
+              }
+              return true;
+            })
+            .map((item) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`nav-item ${isActive ? 'active' : ''}`}
+                >
+                  <Icon size={17} />
+                  {item.label}
+                </Link>
+              );
+            })}
         </nav>
 
         {/* Footer */}

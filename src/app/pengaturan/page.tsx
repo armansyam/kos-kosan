@@ -338,7 +338,8 @@ export default function PengaturanPage() {
         </div>
       )}
 
-      <form onSubmit={handleSave}>
+      {session?.user && (session.user as any).role === 'super_admin' && (
+        <form onSubmit={handleSave}>
         <div style={{ display: 'grid', gap: 20, maxWidth: 800 }}>
 
           {/* LOGO */}
@@ -630,6 +631,7 @@ export default function PengaturanPage() {
           </div>
         </div>
       </form>
+      )}
 
       {/* AKUN KEAMANAN */}
       <form onSubmit={handleSaveAccount} style={{ marginTop: 24 }}>
