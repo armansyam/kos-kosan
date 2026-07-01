@@ -637,12 +637,12 @@ export default function PengaturanPage() {
           <div className="card">
             <div className="card-header">
               <div className="stat-icon purple"><User size={18} /></div>
-              <h3>Akun Keamanan Admin / Owner</h3>
+              <h3>{session?.user && (session.user as any).role === 'super_admin' ? 'Akun Keamanan Owner (Super Admin)' : 'Akun Keamanan Staff / Kasir'}</h3>
             </div>
             <div className="card-body">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div style={{ gridColumn: 'span 2' }}>
-                  <label style={labelStyle}>Nama Admin / Owner</label>
+                  <label style={labelStyle}>{session?.user && (session.user as any).role === 'super_admin' ? 'Nama Owner' : 'Nama Staff'}</label>
                   <input 
                     type="text" 
                     value={accountName} 
@@ -652,13 +652,14 @@ export default function PengaturanPage() {
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>Email / Username Admin / Owner</label>
+                  <label style={labelStyle}>{session?.user && (session.user as any).role === 'super_admin' ? 'Email / Username Owner' : 'Email / Username Staff (Tidak Dapat Diubah)'}</label>
                   <input 
                     type="email" 
                     value={accountEmail} 
                     onChange={e => setAccountEmail(e.target.value)} 
                     style={inputStyle} 
                     required 
+                    disabled={session?.user && (session.user as any).role !== 'super_admin'}
                   />
                 </div>
                 <div style={{ display: 'none' }}></div>
