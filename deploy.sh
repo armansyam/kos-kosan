@@ -35,7 +35,7 @@ if command -v pm2 &> /dev/null; then
   echo "🔄 Menjalankan aplikasi dengan PM2..."
   pm2 delete kos-app &> /dev/null || true
   # Jalankan binary next secara langsung agar PM2 dapat mengontrol proses utama Next.js dengan bersih
-  pm2 start node_modules/next/dist/bin/next --name "kos-app" -- start -- -p 3000
+  pm2 start node_modules/next/dist/bin/next --name "kos-app" -- start -p 3000
   pm2 save
   echo "🎉 Aplikasi berhasil berjalan di background menggunakan PM2!"
 else
