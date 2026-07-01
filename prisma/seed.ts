@@ -4,15 +4,33 @@ import { hash } from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  // 1. Create admin user
-  const hashedPassword = await hash('admin123', 12);
+  // 1. Create super admin user (Owner/Root)
+  const hashedRootPassword = await hash('admin123', 12);
   await prisma.user.upsert({
     where: { email: 'admin@ams.com' },
-    update: {},
+    update: {
+      role: 'super_admin'
+    },
     create: {
       email: 'admin@ams.com',
-      password: hashedPassword,
-      name: 'Admin Kos',
+      password: hashedRootPassword,
+      name: 'Owner Kos',
+      role: 'super_admin'
+    },
+  });
+
+  // Create staff admin user (Kasir)
+  const hashedStaffPassword = await hash('kasir123', 12);
+  await prisma.user.upsert({
+    where: { email: 'kasir@kos.com' },
+    update: {
+      role: 'admin'
+    },
+    create: {
+      email: 'kasir@kos.com',
+      password: hashedStaffPassword,
+      name: 'Kasir Kos',
+      role: 'admin'
     },
   });
 

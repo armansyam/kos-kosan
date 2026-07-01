@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import DashboardLayout from '@/components/DashboardLayout';
-import { Save, Upload, Building2, User, Phone, Mail, MapPin, Globe, Palette, Camera, MessageCircle, Instagram, Facebook } from 'lucide-react';
+import { Save, Upload, Building2, User, Phone, Mail, MapPin, Globe, Palette, Camera, MessageCircle, Instagram, Facebook, Key, Trash2, Shield } from 'lucide-react';
 
 const PREDEFINED_FACILITIES = [
   { name: 'WiFi Gratis' },
@@ -58,10 +58,30 @@ export default function PengaturanPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [savingAccount, setSavingAccount] = useState(false);
 
+  // Staff Management States
+  const [staffList, setStaffList] = useState<any[]>([]);
+  const [newStaffEmail, setNewStaffEmail] = useState('');
+  const [newStaffName, setNewStaffName] = useState('');
+  const [newStaffPassword, setNewStaffPassword] = useState('');
+
+  const fetchStaff = () => {
+    fetch('/api/settings/users')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setStaffList(data);
+        }
+      })
+      .catch(err => console.error(err));
+  };
+
   useEffect(() => {
     if (session?.user) {
       setAccountEmail(session.user.email || '');
       setAccountName(session.user.name || '');
+      if ((session.user as any).role === 'super_admin') {
+        fetchStaff();
+      }
     }
   }, [session]);
 
@@ -162,6 +182,89 @@ export default function PengaturanPage() {
       showToast('Error koneksi');
     } finally {
       setSavingAccount(false);
+    }
+  }
+
+  async function handleAddStaff(e: React.FormEvent) {
+    e.preventDefault();
+    if (!newStaffEmail || !newStaffName || !newStaffPassword) {
+      showToast('Harap isi semua kolom');
+      return;
+    }
+    try {
+      const res = await fetch('/api/settings/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'create',
+          email: newStaffEmail,
+          name: newStaffName,
+          password: newStaffPassword
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('Akun staff berhasil dibuat');
+        setNewStaffEmail('');
+        setNewStaffName('');
+        setNewStaffPassword('');
+        fetchStaff();
+      } else {
+        showToast(data.error || 'Gagal menambahkan staff');
+      }
+    } catch {
+      showToast('Error koneksi');
+    }
+  }
+
+  async function handleDeleteStaff(id: string) {
+    if (!confirm('Apakah Anda yakin ingin menghapus akun staff ini?')) return;
+    try {
+      const res = await fetch('/api/settings/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'delete',
+          id
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('Akun staff berhasil dihapus');
+        fetchStaff();
+      } else {
+        showToast(data.error || 'Gagal menghapus staff');
+      }
+    } catch {
+      showToast('Error koneksi');
+    }
+  }
+
+  async function handleResetStaffPassword(id: string) {
+    const newPass = prompt('Masukkan password baru untuk staff ini:');
+    if (!newPass) return;
+    if (newPass.length < 6) {
+      alert('Password minimal 6 karakter');
+      return;
+    }
+    try {
+      const res = await fetch('/api/settings/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update',
+          id,
+          password: newPass
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showToast('Password staff berhasil diperbarui');
+      } else {
+        showToast(data.error || 'Gagal memperbarui password');
+      }
+    } catch {
+      showToast('Error koneksi');
     }
   }
 
@@ -534,12 +637,12 @@ export default function PengaturanPage() {
           <div className="card">
             <div className="card-header">
               <div className="stat-icon purple"><User size={18} /></div>
-              <h3>Akun Keamanan Admin</h3>
+              <h3>Akun Keamanan Admin / Owner</h3>
             </div>
             <div className="card-body">
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
                 <div style={{ gridColumn: 'span 2' }}>
-                  <label style={labelStyle}>Nama Admin</label>
+                  <label style={labelStyle}>Nama Admin / Owner</label>
                   <input 
                     type="text" 
                     value={accountName} 
@@ -549,7 +652,7 @@ export default function PengaturanPage() {
                   />
                 </div>
                 <div>
-                  <label style={labelStyle}>Email / Username Admin</label>
+                  <label style={labelStyle}>Email / Username Admin / Owner</label>
                   <input 
                     type="email" 
                     value={accountEmail} 
@@ -582,7 +685,7 @@ export default function PengaturanPage() {
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, paddingTop: 8, marginBottom: 32 }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, paddingTop: 8 }}>
             <button type="submit" disabled={savingAccount} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               {savingAccount ? (
                 <><div className="spinner" style={{ width: 16, height: 16, borderWidth: 2, borderTopColor: '#fff' }} /> Menyimpan...</>
@@ -593,6 +696,134 @@ export default function PengaturanPage() {
           </div>
         </div>
       </form>
+
+      {/* KELOLA AKUN STAFF / KASIR (Hanya terlihat jika logged in sebagai super_admin / Owner) */}
+      {session?.user && (session.user as any).role === 'super_admin' && (
+        <div style={{ marginTop: 24, maxWidth: 800 }}>
+          <div style={{ display: 'grid', gap: 24 }}>
+            
+            {/* Form Tambah Staff */}
+            <form onSubmit={handleAddStaff}>
+              <div className="card">
+                <div className="card-header">
+                  <div className="stat-icon blue"><User size={18} /></div>
+                  <h3>Tambah Akun Staff / Kasir Baru</h3>
+                </div>
+                <div className="card-body">
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                    <div>
+                      <label style={labelStyle}>Nama Staff</label>
+                      <input 
+                        type="text" 
+                        value={newStaffName} 
+                        onChange={e => setNewStaffName(e.target.value)} 
+                        style={inputStyle} 
+                        placeholder="Nama Lengkap Staff"
+                        required 
+                      />
+                    </div>
+                    <div>
+                      <label style={labelStyle}>Email / Username Staff</label>
+                      <input 
+                        type="email" 
+                        value={newStaffEmail} 
+                        onChange={e => setNewStaffEmail(e.target.value)} 
+                        style={inputStyle} 
+                        placeholder="kasir@ams.com"
+                        required 
+                      />
+                    </div>
+                    <div style={{ gridColumn: 'span 2' }}>
+                      <label style={labelStyle}>Password Staff</label>
+                      <input 
+                        type="password" 
+                        value={newStaffPassword} 
+                        onChange={e => setNewStaffPassword(e.target.value)} 
+                        style={inputStyle} 
+                        placeholder="Password untuk login staff"
+                        required 
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="card-footer" style={{ display: 'flex', justifyContent: 'flex-end', background: '#f8fafc', borderTop: '1px solid var(--border)' }}>
+                  <button type="submit" className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Save size={16} /> Buat Akun Staff
+                  </button>
+                </div>
+              </div>
+            </form>
+
+            {/* List Akun Staff */}
+            <div className="card">
+              <div className="card-header">
+                <div className="stat-icon orange"><Shield size={18} /></div>
+                <h3>Daftar Akun Staff / Kasir Aktif</h3>
+              </div>
+              <div className="card-body" style={{ padding: 0 }}>
+                {staffList.length === 0 ? (
+                  <div style={{ padding: 24, textAlign: 'center', color: 'var(--text-light)', fontSize: 14, fontStyle: 'italic' }}>
+                    Belum ada akun staff / kasir yang terdaftar.
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                      <thead>
+                        <tr style={{ background: '#f8fafc', borderBottom: '1px solid var(--border)', textAlign: 'left' }}>
+                          <th style={{ padding: '12px 20px', fontWeight: 600, color: 'var(--text-secondary)' }}>Nama</th>
+                          <th style={{ padding: '12px 20px', fontWeight: 600, color: 'var(--text-secondary)' }}>Email / Username</th>
+                          <th style={{ padding: '12px 20px', fontWeight: 600, color: 'var(--text-secondary)' }}>Role</th>
+                          <th style={{ padding: '12px 20px', fontWeight: 600, color: 'var(--text-secondary)', textAlign: 'center' }}>Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {staffList.map((staff) => (
+                          <tr key={staff.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                            <td style={{ padding: '14px 20px', color: 'var(--text-primary)', fontWeight: 500 }}>{staff.name}</td>
+                            <td style={{ padding: '14px 20px', color: 'var(--text-primary)' }}>{staff.email}</td>
+                            <td style={{ padding: '14px 20px' }}>
+                              <span style={{
+                                display: 'inline-block',
+                                background: '#fef3c7',
+                                color: '#d97706',
+                                padding: '2px 8px',
+                                borderRadius: '4px',
+                                fontSize: '11px',
+                                fontWeight: 600
+                              }}>
+                                Kasir
+                              </span>
+                            </td>
+                            <td style={{ padding: '14px 20px', display: 'flex', gap: 8, justifyContent: 'center' }}>
+                              <button
+                                onClick={() => handleResetStaffPassword(staff.id)}
+                                className="btn btn-secondary"
+                                style={{ padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12 }}
+                                title="Reset Password"
+                              >
+                                <Key size={14} /> Reset Sandi
+                              </button>
+                              <button
+                                onClick={() => handleDeleteStaff(staff.id)}
+                                className="btn btn-danger"
+                                style={{ padding: '6px 10px', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 12, backgroundColor: '#ef4444', color: 'white', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
+                                title="Hapus Staff"
+                              >
+                                <Trash2 size={14} /> Hapus
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      )}
     </DashboardLayout>
   );
 }

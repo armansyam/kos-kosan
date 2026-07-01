@@ -203,7 +203,7 @@ export default function LandingPage() {
             <p className="section-desc">Kenyamanan dan keamanan adalah prioritas utama kami</p>
           </div>
           <div className="facilities-grid">
-            {facilities.map((f, i) => (
+            {facilities.map((f: { name: string; icon: React.ReactNode }, i: number) => (
               <div key={i} className="facility-card">
                 <div className="facility-icon">{f.icon}</div>
                 <p className="facility-name">{f.name}</p>

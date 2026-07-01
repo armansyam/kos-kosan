@@ -13,12 +13,14 @@ async function reset() {
     where: { email: 'admin@ams.com' },
     update: {
       password: hashedPassword,
-      name: 'Admin Kos',
+      name: 'Owner Kos',
+      role: 'super_admin',
     },
     create: {
       email: 'admin@ams.com',
       password: hashedPassword,
-      name: 'Admin Kos',
+      name: 'Owner Kos',
+      role: 'super_admin',
     },
   });
 
