@@ -8,7 +8,7 @@ export async function PUT(
   try {
     const { id } = await params;
     const body = await request.json();
-    const { fullName, whatsapp, roomId, monthlyPrice, dueDate, notes } = body;
+    const { fullName, whatsapp, roomId, monthlyPrice, dueDate, notes, active } = body;
 
     // Get current tenant to see if roomId changed
     const currentTenant = await prisma.tenant.findUnique({
@@ -34,7 +34,7 @@ export async function PUT(
 
     const tenant = await prisma.tenant.update({
       where: { id },
-      data: { fullName, whatsapp, roomId, monthlyPrice, dueDate, notes },
+      data: { fullName, whatsapp, roomId, monthlyPrice, dueDate, notes, active },
     });
 
     // If room changed, adjust room statuses
@@ -71,7 +71,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await request.json();
-    
+
     if (body.action === 'checkout') {
       const tenant = await prisma.tenant.update({
         where: { id },
@@ -83,7 +83,7 @@ export async function PATCH(
       await prisma.room.update({ where: { id: tenant.roomId }, data: { status: 'kosong' } });
       return NextResponse.json({ message: 'Penghuni berhasil checkout', tenant });
     }
-    
+
     return NextResponse.json({ error: 'Aksi tidak dikenal' }, { status: 400 });
   } catch (error) {
     console.error('Checkout error:', error);
@@ -97,12 +97,54 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
-    const tenant = await prisma.tenant.findUnique({ where: { id } });
-    if (tenant) {
-      await prisma.room.update({ where: { id: tenant.roomId }, data: { status: 'kosong' } });
+    const body = await request.json().catch(() => ({}));
+    const { reason } = body as { reason?: string };
+
+    if (!reason || !reason.trim()) {
+      return NextResponse.json({ error: 'Alasan hapus wajib diisi' }, { status: 400 });
     }
-    await prisma.tenant.delete({ where: { id } });
-    return NextResponse.json({ message: 'Penghuni dihapus' });
+
+    const tenant = await prisma.tenant.findUnique({
+      where: { id },
+      include: {
+        bills: {
+          include: { payments: true }
+        }
+      }
+    });
+
+    if (!tenant) {
+      return NextResponse.json({ error: 'Penghuni tidak ditemukan' }, { status: 404 });
+    }
+
+    if (tenant.active) {
+      await prisma.tenant.update({
+        where: { id },
+        data: {
+          active: false,
+          checkOutDate: new Date(),
+          notes: tenant.notes ? `${tenant.notes}\n[Hapus permanen diajukan] ${reason}` : `[Hapus permanen diajukan] ${reason}`,
+        },
+      });
+      await prisma.room.update({ where: { id: tenant.roomId }, data: { status: 'kosong' } });
+      return NextResponse.json({ message: 'Penghuni diarsipkan. Hapus permanen hanya dari tab arsip.' });
+    }
+
+    await prisma.$transaction(async (tx) => {
+      for (const bill of tenant.bills) {
+        await tx.payment.deleteMany({ where: { billId: bill.id } });
+      }
+      await tx.bill.deleteMany({ where: { tenantId: id } });
+      await tx.tenant.delete({ where: { id } });
+      const activeTenantInRoom = await tx.tenant.count({
+        where: { roomId: tenant.roomId, active: true }
+      });
+      if (activeTenantInRoom === 0) {
+        await tx.room.update({ where: { id: tenant.roomId }, data: { status: 'kosong' } });
+      }
+    });
+
+    return NextResponse.json({ message: 'Penghuni dihapus permanen' });
   } catch (error) {
     return NextResponse.json({ error: 'Gagal menghapus penghuni' }, { status: 500 });
   }

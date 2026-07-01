@@ -17,7 +17,7 @@ export default function KamarPage() {
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState('');
   const [selectedFloor, setSelectedFloor] = useState<'semua' | number>('semua');
-  
+
   // Custom floor states
   const [showCustomFloor, setShowCustomFloor] = useState(false);
   const [customFloorValue, setCustomFloorValue] = useState('');
@@ -30,7 +30,7 @@ export default function KamarPage() {
 
   async function fetchRooms() {
     setLoading(true);
-    const d = await fetch('/api/rooms').then(r=>r.json());
+    const d = await fetch('/api/rooms').then(r => r.json());
     setRooms(Array.isArray(d) ? d : []);
     setLoading(false);
   }
@@ -39,34 +39,39 @@ export default function KamarPage() {
     e.preventDefault();
     const floorToSave = showCustomFloor && customFloorValue ? parseInt(customFloorValue) : formData.floor;
     const payload = { ...formData, floor: floorToSave };
-    
+
     if (editingRoom) {
-      await fetch(`/api/rooms/${editingRoom.id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+      await fetch(`/api/rooms/${editingRoom.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       showToast('Kamar berhasil diperbarui');
     } else {
-      await fetch('/api/rooms', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(payload) });
+      await fetch('/api/rooms', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
       showToast('Kamar berhasil ditambahkan');
     }
     // Auto-switch to the saved floor's tab so the room is visible
     setSelectedFloor(floorToSave);
     setShowModal(false);
     setEditingRoom(null);
-    setFormData({ name:'', price:0, status:'kosong', notes:'', floor:1 });
+    setFormData({ name: '', price: 0, status: 'kosong', notes: '', floor: 1 });
     setShowCustomFloor(false);
     setCustomFloorValue('');
     fetchRooms();
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Hapus kamar ini? Data penghuni yang terkait juga akan terhapus.')) return;
-    await fetch(`/api/rooms/${id}`, { method:'DELETE' });
-    showToast('Kamar berhasil dihapus');
+    if (!confirm('Hapus kamar ini? Kamar hanya bisa dihapus jika kosong.')) return;
+    const res = await fetch(`/api/rooms/${id}`, { method: 'DELETE' });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      alert(data.error || 'Gagal menghapus kamar');
+      return;
+    }
+    showToast(data.message || 'Kamar berhasil dihapus');
     fetchRooms();
   }
 
   function openEdit(room: Room) {
     setEditingRoom(room);
-    setFormData({ name:room.name, price:room.price, status:room.status, notes:room.notes||'', floor:room.floor || 1 });
+    setFormData({ name: room.name, price: room.price, status: room.status, notes: room.notes || '', floor: room.floor || 1 });
     setShowModal(true);
   }
 
@@ -75,12 +80,12 @@ export default function KamarPage() {
     setTimeout(() => setToast(''), 3000);
   }
 
-  function formatRp(n: number) { return 'Rp'+n.toLocaleString('id-ID'); }
+  function formatRp(n: number) { return 'Rp' + n.toLocaleString('id-ID'); }
 
   const totalRooms = rooms.length;
-  const terisi = rooms.filter(r=>r.status==='terisi').length;
-  const kosong = rooms.filter(r=>r.status==='kosong').length;
-  const menunggak = rooms.filter(r=>r.status==='menunggak').length;
+  const terisi = rooms.filter(r => r.status === 'terisi').length;
+  const kosong = rooms.filter(r => r.status === 'kosong').length;
+  const menunggak = rooms.filter(r => r.status === 'menunggak').length;
 
   const floors = Array.from(new Set(rooms.map(r => getRoomFloor(r)))).sort((a, b) => a - b);
 
@@ -95,19 +100,19 @@ export default function KamarPage() {
       <div className="page-header" style={{ marginBottom: 16, paddingBottom: 12 }}>
         <div>
           <h2>Kamar</h2>
-          <p style={{ fontSize:13, color:'var(--text-secondary)', marginTop:2 }}>Kelola semua kamar kos Anda</p>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>Kelola semua kamar kos Anda</p>
         </div>
-        <div style={{ display:'flex', gap:10 }}>
-          <button onClick={() => { setShowModal(true); setEditingRoom(null); setFormData({ name:'', price:0, status:'kosong', notes:'', floor:1 }); }} className="btn btn-primary">
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={() => { setShowModal(true); setEditingRoom(null); setFormData({ name: '', price: 0, status: 'kosong', notes: '', floor: 1 }); }} className="btn btn-primary">
             <Plus size={16} /> Tambah Kamar
           </button>
         </div>
       </div>
 
       {/* Sub navigation tabs for Floor */}
-      <div className="sub-tabs" style={{ display:'flex', gap:8, marginBottom:20, overflowX:'auto', paddingBottom:4 }}>
-        <button 
-          onClick={() => setSelectedFloor('semua')} 
+      <div className="sub-tabs" style={{ display: 'flex', gap: 8, marginBottom: 20, overflowX: 'auto', paddingBottom: 4 }}>
+        <button
+          onClick={() => setSelectedFloor('semua')}
           className={`sub-tab-btn ${selectedFloor === 'semua' ? 'active' : ''}`}
         >
           Semua Kamar <span className="sub-tab-count">{rooms.length}</span>
@@ -115,9 +120,9 @@ export default function KamarPage() {
         {floors.map(floor => {
           const count = rooms.filter(r => getRoomFloor(r) === floor).length;
           return (
-            <button 
-              key={floor} 
-              onClick={() => setSelectedFloor(floor)} 
+            <button
+              key={floor}
+              onClick={() => setSelectedFloor(floor)}
               className={`sub-tab-btn ${selectedFloor === floor ? 'active' : ''}`}
             >
               Lantai {floor} <span className="sub-tab-count">{count}</span>
@@ -127,20 +132,20 @@ export default function KamarPage() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign:'center', padding:60 }}><div className="spinner" style={{ borderTopColor:'var(--primary)', width:40, height:40, margin:'0 auto' }} /></div>
+        <div style={{ textAlign: 'center', padding: 60 }}><div className="spinner" style={{ borderTopColor: 'var(--primary)', width: 40, height: 40, margin: '0 auto' }} /></div>
       ) : (
         <div className="room-groups-list">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
             {filteredRooms.map(room => {
               const tenant = room.tenants?.[0];
-              const cardColor = room.status === 'terisi' 
+              const cardColor = room.status === 'terisi'
                 ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)'
                 : room.status === 'menunggak'
                   ? 'linear-gradient(135deg, #ef4444 0%, #f87171 100%)'
                   : 'linear-gradient(135deg, #94a3b8 0%, #cbd5e1 100%)';
-              
+
               return (
-                <div 
+                <div
                   key={room.id}
                   className="dash-room-card"
                   style={{
@@ -156,7 +161,7 @@ export default function KamarPage() {
                 >
                   {/* Status Color Bar */}
                   <div style={{ height: '5px', background: cardColor }} />
-                  
+
                   {/* Card Content */}
                   <div style={{ padding: '14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     {/* Header: Room Name & Status Badge */}
@@ -176,7 +181,7 @@ export default function KamarPage() {
                       {room.status === 'kosong' && <span className="badge badge-gray" style={{ fontSize: '10px', padding: '2px 6px' }}>Kosong</span>}
                       {room.status === 'menunggak' && <span className="badge badge-danger" style={{ fontSize: '10px', padding: '2px 6px' }}>Menunggak</span>}
                     </div>
- 
+
                     {/* Tenant Details */}
                     <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px', flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -196,7 +201,7 @@ export default function KamarPage() {
                         </div>
                       )}
                     </div>
- 
+
                     {/* Actions bar */}
                     <div style={{
                       display: 'flex',
@@ -208,7 +213,7 @@ export default function KamarPage() {
                       <button onClick={() => openEdit(room)} className="btn btn-outline btn-sm" title="Edit Kamar" style={{ padding: '4px 8px', height: '28px', width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Edit size={13} />
                       </button>
-                      <button onClick={() => handleDelete(room.id)} className="btn btn-danger btn-sm" title="Hapus Kamar" style={{ padding: '4px 8px', height: '28px', width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <button onClick={() => handleDelete(room.id)} className="btn btn-danger btn-sm" title="Hapus Kamar (hanya jika kosong)" style={{ padding: '4px 8px', height: '28px', width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Trash2 size={13} />
                       </button>
                     </div>
@@ -238,16 +243,16 @@ export default function KamarPage() {
                 <div className="form-grid">
                   <div className="form-group">
                     <label>Nama Kamar</label>
-                    <input className="form-input" type="text" value={formData.name} onChange={e=>setFormData({...formData,name:e.target.value})} placeholder="A1, B2, ..." required />
+                    <input className="form-input" type="text" value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} placeholder="A1, B2, ..." required />
                   </div>
                   <div className="form-group">
                     <label>Harga per Bulan (Rp)</label>
-                    <input className="form-input" type="number" value={formData.price} onChange={e=>setFormData({...formData,price:parseInt(e.target.value)})} required />
+                    <input className="form-input" type="number" value={formData.price} onChange={e => setFormData({ ...formData, price: parseInt(e.target.value) })} required />
                   </div>
                 </div>
                 <div className="form-group">
                   <label>Status</label>
-                  <select className="form-select" value={formData.status} onChange={e=>setFormData({...formData,status:e.target.value})}>
+                  <select className="form-select" value={formData.status} onChange={e => setFormData({ ...formData, status: e.target.value })}>
                     <option value="kosong">Kosong</option>
                     <option value="terisi">Terisi</option>
                     <option value="menunggak">Menunggak</option>
@@ -256,9 +261,9 @@ export default function KamarPage() {
                 <div className="form-group">
                   <label>Lantai</label>
                   {!showCustomFloor ? (
-                    <select 
-                      className="form-select" 
-                      value={formData.floor} 
+                    <select
+                      className="form-select"
+                      value={formData.floor}
                       onChange={e => {
                         if (e.target.value === 'new') {
                           setShowCustomFloor(true);
@@ -274,18 +279,18 @@ export default function KamarPage() {
                     </select>
                   ) : (
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <input 
-                        className="form-input" 
-                        type="number" 
-                        value={customFloorValue} 
-                        onChange={e => setCustomFloorValue(e.target.value)} 
-                        placeholder="Masukkan nomor lantai..." 
+                      <input
+                        className="form-input"
+                        type="number"
+                        value={customFloorValue}
+                        onChange={e => setCustomFloorValue(e.target.value)}
+                        placeholder="Masukkan nomor lantai..."
                         min={1}
-                        required 
+                        required
                       />
-                      <button 
-                        type="button" 
-                        className="btn btn-outline" 
+                      <button
+                        type="button"
+                        className="btn btn-outline"
                         onClick={() => {
                           setShowCustomFloor(false);
                           setCustomFloorValue('');
@@ -299,7 +304,7 @@ export default function KamarPage() {
                 </div>
                 <div className="form-group">
                   <label>Catatan</label>
-                  <textarea className="form-textarea" value={formData.notes} onChange={e=>setFormData({...formData,notes:e.target.value})} placeholder="Fasilitas, kondisi, dll..." />
+                  <textarea className="form-textarea" value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} placeholder="Fasilitas, kondisi, dll..." />
                 </div>
               </div>
               <div className="modal-footer">

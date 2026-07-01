@@ -12,12 +12,12 @@ export async function PUT(
 
     const room = await prisma.room.update({
       where: { id },
-      data: { 
-        name, 
-        price, 
-        status, 
-        notes, 
-        floor: floor ? parseInt(floor as any) : 1 
+      data: {
+        name,
+        price,
+        status,
+        notes,
+        floor: floor ? parseInt(floor as any) : 1
       },
     });
     return NextResponse.json(room);
@@ -33,6 +33,18 @@ export async function DELETE(
 ) {
   try {
     const { id } = await params;
+
+    const activeTenant = await prisma.tenant.findFirst({
+      where: { roomId: id, active: true },
+    });
+
+    if (activeTenant) {
+      return NextResponse.json(
+        { error: 'Kamar masih ada penghuni aktif. Checkout dulu sebelum hapus.' },
+        { status: 400 }
+      );
+    }
+
     await prisma.room.delete({ where: { id } });
     return NextResponse.json({ message: 'Kamar dihapus' });
   } catch (error) {

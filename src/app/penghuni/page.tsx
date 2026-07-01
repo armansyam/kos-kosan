@@ -19,8 +19,8 @@ export default function PenghuniPage() {
   const [editingTenant, setEditingTenant] = useState<Tenant | null>(null);
   const [selectedTenant, setSelectedTenant] = useState<Tenant | null>(null);
   const [formData, setFormData] = useState({
-    fullName:'', whatsapp:'', roomId:'', checkInDate:'',
-    monthlyPrice:0, dueDate:1, notes:'', active:true
+    fullName: '', whatsapp: '', roomId: '', checkInDate: '',
+    monthlyPrice: 0, dueDate: 1, notes: '', active: true
   });
   const [loading, setLoading] = useState(true);
   const [toast, setToast] = useState('');
@@ -36,9 +36,9 @@ export default function PenghuniPage() {
   async function fetchData() {
     setLoading(true);
     const [t, r, s] = await Promise.all([
-      fetch('/api/tenants').then(x=>x.json()),
-      fetch('/api/rooms').then(x=>x.json()),
-      fetch('/api/settings').then(x=>x.json())
+      fetch('/api/tenants').then(x => x.json()),
+      fetch('/api/rooms').then(x => x.json()),
+      fetch('/api/settings').then(x => x.json())
     ]);
     setTenants(Array.isArray(t) ? t : []);
     setRooms(Array.isArray(r) ? r : []);
@@ -50,7 +50,7 @@ export default function PenghuniPage() {
     e.preventDefault();
     try {
       if (editingTenant) {
-        const res = await fetch(`/api/tenants/${editingTenant.id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) });
+        const res = await fetch(`/api/tenants/${editingTenant.id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
         if (!res.ok) {
           const errData = await res.json();
           alert(errData.error || 'Gagal memperbarui data penghuni');
@@ -58,7 +58,7 @@ export default function PenghuniPage() {
         }
         showToast('Data penghuni berhasil diperbarui');
       } else {
-        const res = await fetch('/api/tenants', { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(formData) });
+        const res = await fetch('/api/tenants', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(formData) });
         if (!res.ok) {
           const errData = await res.json();
           alert(errData.error || 'Gagal menambahkan penghuni');
@@ -79,8 +79,8 @@ export default function PenghuniPage() {
   async function handleCheckout(tenant: Tenant) {
     if (!confirm(`Yakin ${tenant.fullName} mau keluar dari kos?\nKamar ${tenant.room.name} akan menjadi kosong.`)) return;
     await fetch(`/api/tenants/${tenant.id}`, {
-      method:'PATCH', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ action:'checkout' })
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'checkout' })
     });
     setSelectedTenant(null);
     showToast(`${tenant.fullName} berhasil checkout`);
@@ -88,25 +88,39 @@ export default function PenghuniPage() {
   }
 
   async function handleDelete(id: string) {
-    if (!confirm('Hapus penghuni ini secara permanen? Data tidak bisa dikembalikan.')) return;
-    await fetch(`/api/tenants/${id}`, { method:'DELETE' });
+    const reason = prompt('Masukkan alasan hapus permanen / arsip:', '');
+    if (!reason || !reason.trim()) return;
+    if (!confirm('Lanjut hapus? Penghuni aktif akan diarsipkan dulu. Penghuni arsip akan dihapus permanen.')) return;
+
+    const res = await fetch(`/api/tenants/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+    });
+    const data = await res.json().catch(() => ({}));
+
+    if (!res.ok) {
+      alert(data.error || 'Gagal menghapus penghuni');
+      return;
+    }
+
     setSelectedTenant(null);
-    showToast('Penghuni berhasil dihapus');
+    showToast(data.message || 'Penghuni berhasil dihapus');
     fetchData();
   }
 
   function openEdit(tenant: Tenant) {
     setEditingTenant(tenant);
     setFormData({
-      fullName:tenant.fullName, whatsapp:tenant.whatsapp, roomId:tenant.roomId,
-      checkInDate:tenant.checkInDate.split('T')[0], monthlyPrice:tenant.monthlyPrice,
-      dueDate:tenant.dueDate, notes:tenant.notes||'', active:tenant.active
+      fullName: tenant.fullName, whatsapp: tenant.whatsapp, roomId: tenant.roomId,
+      checkInDate: tenant.checkInDate.split('T')[0], monthlyPrice: tenant.monthlyPrice,
+      dueDate: tenant.dueDate, notes: tenant.notes || '', active: tenant.active
     });
     setShowModal(true);
   }
 
   function resetForm() {
-    setFormData({ fullName:'', whatsapp:'', roomId:'', checkInDate:'', monthlyPrice:0, dueDate:1, notes:'', active:true });
+    setFormData({ fullName: '', whatsapp: '', roomId: '', checkInDate: '', monthlyPrice: 0, dueDate: 1, notes: '', active: true });
   }
 
   function showToast(msg: string) {
@@ -115,10 +129,10 @@ export default function PenghuniPage() {
   }
 
   function formatDate(d: string) {
-    return new Date(d).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+    return new Date(d).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
   }
 
-  function formatRp(n: number) { return 'Rp'+n.toLocaleString('id-ID'); }
+  function formatRp(n: number) { return 'Rp' + n.toLocaleString('id-ID'); }
 
   function openWhatsApp(wa: string, name: string) {
     const num = wa.replace(/^0/, '62');
@@ -142,7 +156,7 @@ export default function PenghuniPage() {
         setShowPayModal(null);
         showToast('Pembayaran berhasil dicatat');
         // Fetch fresh tenants data
-        const tData = await fetch('/api/tenants').then(x=>x.json());
+        const tData = await fetch('/api/tenants').then(x => x.json());
         const tenantsList = Array.isArray(tData) ? tData : [];
         setTenants(tenantsList);
         const updated = tenantsList.find(x => x.id === selectedTenant?.id);
@@ -160,7 +174,7 @@ export default function PenghuniPage() {
     today.setHours(0, 0, 0, 0);
     const due = new Date(dueDate);
     due.setHours(0, 0, 0, 0);
-    return Math.ceil((due.getTime() - today.getTime()) / (1000*60*60*24));
+    return Math.ceil((due.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
   }
 
   function getStatusBadge(bill: any) {
@@ -179,7 +193,7 @@ export default function PenghuniPage() {
     const room = tenant.room.name;
     const month = bill.month;
     const amount = bill.amount.toLocaleString('id-ID');
-    const due = new Date(bill.dueDate).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'});
+    const due = new Date(bill.dueDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
     const wa = tenant.whatsapp.replace(/^0/, '62');
     const bankDetails = settings?.rekening ? `\n\nPembayaran dapat ditransfer ke:\n${settings.rekening}` : '';
     const msg = encodeURIComponent(`Halo Pak/Bu ${name},\nBerikut tagihan kos kamar ${room} untuk bulan ${month}.\n\nTotal Tagihan: Rp${amount}\nJatuh Tempo: ${due}${bankDetails}\n\nTerima kasih 🙏`);
@@ -190,22 +204,22 @@ export default function PenghuniPage() {
     if (!checkOutDateStr) return 0;
     const checkout = new Date(checkOutDateStr);
     const today = new Date();
-    checkout.setHours(0,0,0,0);
-    today.setHours(0,0,0,0);
+    checkout.setHours(0, 0, 0, 0);
+    today.setHours(0, 0, 0, 0);
     const diffTime = today.getTime() - checkout.getTime();
     return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   };
 
   const activeTenants = tenants.filter(t => t.active);
   const inactiveTenants = tenants.filter(t => !t.active);
-  
+
   const recentCheckouts = inactiveTenants.filter(t => getDaysSinceCheckout(t.checkOutDate) <= 30);
   const archivedTenants = inactiveTenants.filter(t => getDaysSinceCheckout(t.checkOutDate) > 30);
-  
-  const displayTenants = viewTab === 'aktif' 
-    ? activeTenants 
-    : viewTab === 'keluar' 
-      ? recentCheckouts 
+
+  const displayTenants = viewTab === 'aktif'
+    ? activeTenants
+    : viewTab === 'keluar'
+      ? recentCheckouts
       : archivedTenants;
 
   const availableRooms = rooms.filter(r => r.status === 'kosong' || r.id === editingTenant?.roomId);
@@ -227,10 +241,10 @@ export default function PenghuniPage() {
         </span>
       );
     }
-    
+
     const latestBill = tenant.bills[0];
     const days = getDaysLeft(latestBill.dueDate);
-    
+
     if (latestBill.status === 'lunas') {
       return (
         <span style={{
@@ -246,7 +260,7 @@ export default function PenghuniPage() {
         </span>
       );
     }
-    
+
     if (latestBill.status === 'menunggak' || days < 0) {
       return (
         <span style={{
@@ -262,7 +276,7 @@ export default function PenghuniPage() {
         </span>
       );
     }
-    
+
     return (
       <span style={{
         fontSize: '10px',
@@ -284,11 +298,11 @@ export default function PenghuniPage() {
       <div className="page-header">
         <div>
           <h2>Penghuni</h2>
-          <p style={{ fontSize:13, color:'var(--text-secondary)', marginTop:2 }}>
+          <p style={{ fontSize: 13, color: 'var(--text-secondary)', marginTop: 2 }}>
             {activeTenants.length} aktif · {recentCheckouts.length} baru keluar · {archivedTenants.length} diarsipkan
           </p>
         </div>
-        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           {viewTab === 'aktif' && (
             <button onClick={() => { setShowModal(true); setEditingTenant(null); resetForm(); }} className="btn btn-primary">
               <Plus size={16} /> Tambah Penghuni
@@ -298,15 +312,15 @@ export default function PenghuniPage() {
       </div>
 
       {/* Sub navigation tabs */}
-      <div className="sub-tabs" style={{ display:'flex', gap:8, marginBottom:20, overflowX:'auto', paddingBottom:4 }}>
+      <div className="sub-tabs" style={{ display: 'flex', gap: 8, marginBottom: 20, overflowX: 'auto', paddingBottom: 4 }}>
         {[
           { key: 'aktif', label: 'Penghuni Aktif', count: activeTenants.length },
           { key: 'keluar', label: 'Sudah Keluar', count: recentCheckouts.length },
           { key: 'arsip', label: 'Arsip', count: archivedTenants.length },
         ].map(t => (
-          <button 
-            key={t.key} 
-            onClick={() => setViewTab(t.key as any)} 
+          <button
+            key={t.key}
+            onClick={() => setViewTab(t.key as any)}
             className={`sub-tab-btn ${viewTab === t.key ? 'active' : ''}`}
           >
             {t.label} <span className="sub-tab-count">{t.count}</span>
@@ -315,15 +329,15 @@ export default function PenghuniPage() {
       </div>
 
       {loading ? (
-        <div style={{ textAlign:'center', padding:60 }}><div className="spinner" style={{ borderTopColor:'var(--primary)', width:40, height:40, margin:'0 auto' }} /></div>
+        <div style={{ textAlign: 'center', padding: 60 }}><div className="spinner" style={{ borderTopColor: 'var(--primary)', width: 40, height: 40, margin: '0 auto' }} /></div>
       ) : (
         <div className="room-groups-list">
           <div className="dash-room-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '16px' }}>
             {displayTenants.map(tenant => {
               const cardColor = tenant.active ? 'linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%)' : '#94A3B8';
-              
+
               return (
-                <div 
+                <div
                   key={tenant.id}
                   onClick={() => setSelectedTenant(tenant)}
                   className={`dash-room-card ${selectedTenant?.id === tenant.id ? 'active-room-card' : ''}`}
@@ -341,7 +355,7 @@ export default function PenghuniPage() {
                 >
                   {/* Color Bar / Status bar */}
                   <div style={{ height: '5px', background: cardColor }} />
-                  
+
                   {/* Card Body */}
                   <div style={{ padding: '14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     {/* Header Info */}
@@ -400,7 +414,7 @@ export default function PenghuniPage() {
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <span style={{ color: '#94a3b8' }}>Jatuh Tempo</span>
                         <span style={{ fontWeight: 500 }}>
-                          {tenant.checkOutDate 
+                          {tenant.checkOutDate
                             ? `Keluar ${new Date(tenant.checkOutDate).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}`
                             : `Tgl ${tenant.dueDate}`
                           }
@@ -429,7 +443,7 @@ export default function PenghuniPage() {
                           <LogOut size={13} />
                         </button>
                       ) : (
-                        <button onClick={() => handleDelete(tenant.id)} className="btn btn-danger btn-sm" title="Hapus Permanen" style={{ padding: '4px 8px', height: '28px', width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <button onClick={() => handleDelete(tenant.id)} className="btn btn-danger btn-sm" title="Arsip / Hapus Permanen" style={{ padding: '4px 8px', height: '28px', width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Trash2 size={13} />
                         </button>
                       )}
@@ -440,11 +454,11 @@ export default function PenghuniPage() {
             })}
           </div>
           {displayTenants.length === 0 && (
-            <div className="card" style={{ textAlign:'center', padding:32, color:'var(--text-light)' }}>
-              {viewTab === 'aktif' 
-                ? 'Belum ada penghuni aktif' 
-                : viewTab === 'keluar' 
-                  ? 'Belum ada penghuni yang baru keluar (≤30 hari)' 
+            <div className="card" style={{ textAlign: 'center', padding: 32, color: 'var(--text-light)' }}>
+              {viewTab === 'aktif'
+                ? 'Belum ada penghuni aktif'
+                : viewTab === 'keluar'
+                  ? 'Belum ada penghuni yang baru keluar (≤30 hari)'
                   : 'Belum ada penghuni di arsip (>30 hari)'}
             </div>
           )}
@@ -460,7 +474,7 @@ export default function PenghuniPage() {
               <button className="modal-close" onClick={() => setSelectedTenant(null)}>✕</button>
             </div>
             <div className="modal-body" style={{ maxHeight: '75vh', overflowY: 'auto' }}>
-              
+
               {/* Profile Card & Info grid */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '20px', marginBottom: '24px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid var(--border)' }}>
@@ -576,7 +590,7 @@ export default function PenghuniPage() {
                   </button>
                 ) : (
                   <button onClick={() => { handleDelete(selectedTenant.id); setSelectedTenant(null); }} className="btn btn-danger" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                    <Trash2 size={16} /> Hapus Permanen
+                    <Trash2 size={16} /> Arsip / Hapus
                   </button>
                 )}
               </div>
@@ -650,7 +664,7 @@ export default function PenghuniPage() {
       {/* MODAL PENGHUNI */}
       {showModal && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" style={{ maxWidth:560 }} onClick={e=>e.stopPropagation()}>
+          <div className="modal" style={{ maxWidth: 560 }} onClick={e => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingTenant ? 'Edit Penghuni' : 'Tambah Penghuni'}</h3>
               <button className="modal-close" onClick={() => setShowModal(false)}>✕</button>
@@ -660,41 +674,41 @@ export default function PenghuniPage() {
                 <div className="form-grid">
                   <div className="form-group full">
                     <label>Nama Lengkap</label>
-                    <input className="form-input" type="text" value={formData.fullName} onChange={e=>setFormData({...formData,fullName:e.target.value})} required />
+                    <input className="form-input" type="text" value={formData.fullName} onChange={e => setFormData({ ...formData, fullName: e.target.value })} required />
                   </div>
                   <div className="form-group">
                     <label>No. WhatsApp</label>
-                    <input className="form-input" type="text" value={formData.whatsapp} onChange={e=>setFormData({...formData,whatsapp:e.target.value})} placeholder="628xxx" required />
+                    <input className="form-input" type="text" value={formData.whatsapp} onChange={e => setFormData({ ...formData, whatsapp: e.target.value })} placeholder="628xxx" required />
                   </div>
                   <div className="form-group">
                     <label>Kamar</label>
-                    <select className="form-select" value={formData.roomId} onChange={e=>{
-                      const r = rooms.find(x=>x.id===e.target.value);
-                      setFormData({...formData, roomId:e.target.value, monthlyPrice:r?.price||formData.monthlyPrice});
+                    <select className="form-select" value={formData.roomId} onChange={e => {
+                      const r = rooms.find(x => x.id === e.target.value);
+                      setFormData({ ...formData, roomId: e.target.value, monthlyPrice: r?.price || formData.monthlyPrice });
                     }} required>
                       <option value="">Pilih Kamar</option>
-                      {availableRooms.map(r=><option key={r.id} value={r.id}>{r.name} — {formatRp(r.price)}/bln</option>)}
+                      {availableRooms.map(r => <option key={r.id} value={r.id}>{r.name} — {formatRp(r.price)}/bln</option>)}
                     </select>
                   </div>
                   <div className="form-group">
                     <label>Tanggal Check-in</label>
-                    <input className="form-input" type="date" value={formData.checkInDate} onChange={e=>setFormData({...formData,checkInDate:e.target.value})} required />
+                    <input className="form-input" type="date" value={formData.checkInDate} onChange={e => setFormData({ ...formData, checkInDate: e.target.value })} required />
                   </div>
                   <div className="form-group">
                     <label>Harga per Bulan (Rp)</label>
-                    <input className="form-input" type="number" value={formData.monthlyPrice} onChange={e=>setFormData({...formData,monthlyPrice:parseInt(e.target.value)})} required />
+                    <input className="form-input" type="number" value={formData.monthlyPrice} onChange={e => setFormData({ ...formData, monthlyPrice: parseInt(e.target.value) })} required />
                   </div>
                   <div className="form-group">
                     <label>Jatuh Tempo (tanggal ke-)</label>
-                    <input className="form-input" type="number" value={formData.dueDate} onChange={e=>setFormData({...formData,dueDate:parseInt(e.target.value)})} min={1} max={31} required />
+                    <input className="form-input" type="number" value={formData.dueDate} onChange={e => setFormData({ ...formData, dueDate: parseInt(e.target.value) })} min={1} max={31} required />
                   </div>
                   <div className="form-group full">
                     <label>Catatan</label>
-                    <textarea className="form-textarea" value={formData.notes} onChange={e=>setFormData({...formData,notes:e.target.value})} placeholder="KTP, kendaraan, catatan lain..." />
+                    <textarea className="form-textarea" value={formData.notes} onChange={e => setFormData({ ...formData, notes: e.target.value })} placeholder="KTP, kendaraan, catatan lain..." />
                   </div>
-                  <div className="form-group" style={{ display:'flex', alignItems:'center', gap:8, marginBottom:0 }}>
-                    <input type="checkbox" id="active" checked={formData.active} onChange={e=>setFormData({...formData,active:e.target.checked})} style={{ width:16, height:16 }} />
-                    <label htmlFor="active" style={{ marginBottom:0 }}>Penghuni Aktif</label>
+                  <div className="form-group" style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 0 }}>
+                    <input type="checkbox" id="active" checked={formData.active} onChange={e => setFormData({ ...formData, active: e.target.checked })} style={{ width: 16, height: 16 }} />
+                    <label htmlFor="active" style={{ marginBottom: 0 }}>Penghuni Aktif</label>
                   </div>
                 </div>
               </div>
