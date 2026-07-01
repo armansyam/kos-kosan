@@ -9,10 +9,10 @@ function parseDateInput(dateStr: string) {
 
 export async function PUT(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
     const { fullName, whatsapp, roomId, checkInDate, monthlyPrice, dueDate, notes, active } = body;
     console.log('Received checkInDate:', checkInDate); // Tambah log
@@ -81,10 +81,10 @@ export async function PUT(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
 
     if (body.action === 'checkout') {
@@ -108,10 +108,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json().catch(() => ({}));
     const { reason } = body as { reason?: string };
 
