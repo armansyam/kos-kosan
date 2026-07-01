@@ -4,6 +4,8 @@ import { ReactNode, useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
+import packageJson from '../../package.json';
+
 import {
   LayoutDashboard,
   BedDouble,
@@ -244,7 +246,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </div>
           <div style={{ borderTop: '1px solid rgba(0,0,0,0.06)', paddingTop: '12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px' }}>
             <span style={{ color: 'var(--text-secondary)' }}>System Version</span>
-            <strong style={{ color: '#1e293b' }}>v1.0.0</strong>
+            <strong style={{ color: '#1e293b' }}>v{packageJson.version}</strong>
+
           </div>
           <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
             <a 
