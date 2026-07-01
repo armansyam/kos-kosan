@@ -33,7 +33,7 @@ async function main() {
   for (let i = 1; i <= 5; i++) {
     const roomName = `A${i}`;
     const roomId = roomName.toLowerCase();
-    
+
     await prisma.room.upsert({
       where: { id: roomId },
       update: {},
@@ -47,6 +47,71 @@ async function main() {
     });
   }
 
+  // 3. Create dummy tenants for testing
+  const dummyTenants = [
+    {
+      fullName: 'Budi Santoso',
+      whatsapp: '081234567801',
+      roomId: 'a1',
+      checkInDate: new Date('2026-06-01'),
+      monthlyPrice: 800000,
+      dueDate: 5,
+      notes: 'Dummy data testing',
+      active: true,
+    },
+    {
+      fullName: 'Siti Rahma',
+      whatsapp: '081234567802',
+      roomId: 'a2',
+      checkInDate: new Date('2026-06-03'),
+      monthlyPrice: 800000,
+      dueDate: 10,
+      notes: 'Dummy data testing',
+      active: true,
+    },
+    {
+      fullName: 'Andi Pratama',
+      whatsapp: '081234567803',
+      roomId: 'a3',
+      checkInDate: new Date('2026-06-05'),
+      monthlyPrice: 800000,
+      dueDate: 15,
+      notes: 'Dummy data testing',
+      active: true,
+    },
+    {
+      fullName: 'Maya Putri',
+      whatsapp: '081234567804',
+      roomId: 'a4',
+      checkInDate: new Date('2026-06-07'),
+      monthlyPrice: 800000,
+      dueDate: 20,
+      notes: 'Dummy data testing',
+      active: true,
+    },
+    {
+      fullName: 'Rizky Aditya',
+      whatsapp: '081234567805',
+      roomId: 'a5',
+      checkInDate: new Date('2026-06-09'),
+      monthlyPrice: 800000,
+      dueDate: 25,
+      notes: 'Dummy data testing',
+      active: true,
+    },
+  ];
+
+  for (const tenant of dummyTenants) {
+    const existingTenant = await prisma.tenant.findFirst({
+      where: { fullName: tenant.fullName, roomId: tenant.roomId },
+    });
+
+    if (!existingTenant) {
+      await prisma.tenant.create({ data: tenant });
+    }
+  }
+
+  // 4. Create default settings
   // 3. Create default settings
   const existingSetting = await prisma.setting.findFirst();
   if (!existingSetting) {

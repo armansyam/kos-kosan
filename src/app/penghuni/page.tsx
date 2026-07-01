@@ -216,11 +216,43 @@ export default function PenghuniPage() {
   const recentCheckouts = inactiveTenants.filter(t => getDaysSinceCheckout(t.checkOutDate) <= 30);
   const archivedTenants = inactiveTenants.filter(t => getDaysSinceCheckout(t.checkOutDate) > 30);
 
-  const displayTenants = viewTab === 'aktif'
+  const sortByRoom = (a: Tenant, b: Tenant) => {
+    const getRoomSortKey = (name: string) => {
+      const match = name.match(/([A-Za-z]+)?\s*(\d+)/);
+      if (match) {
+        return {
+          prefix: (match[1] || '').toUpperCase(),
+          number: Number(match[2]),
+          raw: name.toUpperCase(),
+        };
+      }
+      return {
+        prefix: name.toUpperCase(),
+        number: Number.MAX_SAFE_INTEGER,
+        raw: name.toUpperCase(),
+      };
+    };
+
+    const roomA = getRoomSortKey(a.room.name);
+    const roomB = getRoomSortKey(b.room.name);
+
+    if (roomA.prefix !== roomB.prefix) {
+      return roomA.prefix.localeCompare(roomB.prefix, 'id', { sensitivity: 'base' });
+    }
+
+    if (roomA.number !== roomB.number) {
+      return roomA.number - roomB.number;
+    }
+
+    return roomA.raw.localeCompare(roomB.raw, 'id', { numeric: true, sensitivity: 'base' });
+  };
+
+  const displayTenants = (viewTab === 'aktif'
     ? activeTenants
     : viewTab === 'keluar'
       ? recentCheckouts
-      : archivedTenants;
+      : archivedTenants
+  ).slice().sort(sortByRoom);
 
   const availableRooms = rooms.filter(r => r.status === 'kosong' || r.id === editingTenant?.roomId);
 
