@@ -136,6 +136,29 @@ export default function PengaturanPage() {
         document.documentElement.style.setProperty('--primary', profile.colorUtama);
         document.documentElement.style.setProperty('--primary-dark', profile.colorUtama + 'dd');
         document.documentElement.style.setProperty('--sidebar-bg', profile.colorSidebar);
+
+        // Instantly update favicon in browser tab if logo changed
+        if (logo) {
+          const rels = ['icon', 'shortcut icon', 'apple-touch-icon'];
+          rels.forEach((rel) => {
+            let link = document.querySelector(`link[rel*="${rel}"]`) as HTMLLinkElement;
+            if (!link) {
+              link = document.createElement('link');
+              link.rel = rel;
+              document.head.appendChild(link);
+            }
+            link.href = logo;
+          });
+        }
+
+        // Instantly update browser tab title
+        if (profile.namaKos) {
+          const currentTitle = document.title;
+          if (currentTitle.includes("—")) {
+            const pagePart = currentTitle.split('—')[0].trim();
+            document.title = `${pagePart} — ${profile.namaKos}`;
+          }
+        }
       } else {
         showToast('Gagal menyimpan pengaturan');
       }
