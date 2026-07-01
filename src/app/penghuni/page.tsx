@@ -129,10 +129,14 @@ export default function PenghuniPage() {
     e.preventDefault();
     if (!showPayModal) return;
     try {
+      const totalPaid = showPayModal.payments?.reduce((sum: number, p: any) => sum + p.amount, 0) || 0;
+      const remaining = showPayModal.amount - totalPaid;
+      const payAmount = payForm.amount !== undefined && !isNaN(payForm.amount) ? payForm.amount : remaining;
+
       const res = await fetch('/api/payments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...payForm, billId: showPayModal.id, amount: payForm.amount || showPayModal.amount }),
+        body: JSON.stringify({ ...payForm, billId: showPayModal.id, amount: payAmount }),
       });
       if (res.ok) {
         setShowPayModal(null);
@@ -535,11 +539,13 @@ export default function PenghuniPage() {
                                 </button>
                                 {bill.status !== 'lunas' && (
                                   <button onClick={() => {
+                                    const totalPaid = bill.payments?.reduce((sum: number, p: any) => sum + p.amount, 0) || 0;
+                                    const remaining = bill.amount - totalPaid;
                                     setShowPayModal(bill);
                                     setPayForm({
                                       paymentDate: new Date().toISOString().split('T')[0],
                                       paymentMethod: 'transfer',
-                                      amount: bill.amount,
+                                      amount: remaining,
                                       notes: ''
                                     });
                                   }} className="btn btn-success btn-sm" style={{ padding: '4px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -597,7 +603,17 @@ export default function PenghuniPage() {
               <div className="modal-body">
                 <div style={{ background: '#f8fafc', padding: 12, borderRadius: 8, marginBottom: 16, fontSize: 13, border: '1px solid var(--border)' }}>
                   <p style={{ margin: '0 0 4px 0' }}>Bulan: <strong>{showPayModal.month}</strong></p>
-                  <p style={{ margin: 0 }}>Nominal Tagihan: <strong style={{ color: 'var(--primary)' }}>{formatRp(showPayModal.amount)}</strong></p>
+                  {(() => {
+                    const totalPaid = showPayModal.payments?.reduce((sum: number, p: any) => sum + p.amount, 0) || 0;
+                    const remaining = showPayModal.amount - totalPaid;
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 2, marginTop: 4 }}>
+                        <p style={{ margin: 0 }}>Total Tagihan: <strong>{formatRp(showPayModal.amount)}</strong></p>
+                        {totalPaid > 0 && <p style={{ margin: 0 }}>Sudah Dibayar: <strong style={{ color: '#16a34a' }}>{formatRp(totalPaid)}</strong></p>}
+                        <p style={{ margin: 0 }}>Sisa Tagihan: <strong style={{ color: '#dc2626' }}>{formatRp(remaining)}</strong></p>
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div className="form-group">
                   <label>Tanggal Pembayaran</label>
@@ -607,7 +623,10 @@ export default function PenghuniPage() {
                   <label>Metode Pembayaran</label>
                   <select className="form-select" value={payForm.paymentMethod} onChange={e => setPayForm({ ...payForm, paymentMethod: e.target.value })}>
                     <option value="transfer">Transfer Bank</option>
-                    <option value="cash">Tunai (Cash)</option>
+                    <option value="tunai">Tunai</option>
+                    <option value="qris">QRIS</option>
+                    <option value="gopay">GoPay</option>
+                    <option value="ovo">OVO</option>
                   </select>
                 </div>
                 <div className="form-group">
