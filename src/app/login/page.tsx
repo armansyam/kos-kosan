@@ -45,8 +45,8 @@ export default function LoginPage() {
       setError('Email atau password salah');
       setLoading(false);
     } else {
-      router.push('/dashboard');
-      router.refresh();
+      // Hard navigation agar session cookie NextAuth terbaca dengan benar
+      window.location.href = '/dashboard';
     }
   };
 

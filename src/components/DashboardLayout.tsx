@@ -197,9 +197,8 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '6px 0' }} />
           <button
             onClick={async () => {
-              await signOut({ redirect: false });
-              router.push('/login');
-              router.refresh();
+              // callbackUrl memastikan redirect penuh setelah session dihapus
+              await signOut({ callbackUrl: '/login' });
             }}
             className="nav-item"
             style={{ color: '#f87171' }}
