@@ -3,6 +3,7 @@ import './globals.css';
 import './dashboard-styles.css';
 import './landing-styles.css';
 import { SessionProviderWrapper } from '@/components/SessionProviderWrapper';
+import { prisma } from '@/lib/prisma';
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -23,11 +24,15 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // Query db to get settings update timestamp as a favicon cache-buster
+  const setting = await prisma.setting.findFirst({ select: { updatedAt: true } });
+  const version = setting?.updatedAt ? new Date(setting.updatedAt).getTime() : Date.now();
+
   return (
     <html lang="id">
       <head>
@@ -38,11 +43,11 @@ export default function RootLayout({
           rel="stylesheet"
         />
         {/* PWA Manifest — dinamis dari database */}
-        <link rel="manifest" href="/api/manifest" />
+        <link rel="manifest" href={`/api/manifest?v=${version}`} />
         {/* Favicon & Apple Touch Icon — dinamis mengikuti logo pengaturan dari database */}
-        <link rel="icon" href="/api/manifest/icon?size=32" type="image/png" />
-        <link rel="shortcut icon" href="/api/manifest/icon?size=32" type="image/png" />
-        <link rel="apple-touch-icon" href="/api/manifest/icon?size=192" />
+        <link rel="icon" href={`/api/manifest/icon?size=32&v=${version}`} type="image/png" />
+        <link rel="shortcut icon" href={`/api/manifest/icon?size=32&v=${version}`} type="image/png" />
+        <link rel="apple-touch-icon" href={`/api/manifest/icon?size=192&v=${version}`} />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
