@@ -31,6 +31,14 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Tagihan tidak ditemukan' }, { status: 404 });
     }
 
+    // Dapatkan data pembayaran lama untuk menghitung total cicilan
+    const existingPayments = await prisma.payment.findMany({
+      where: { billId },
+    });
+
+    const totalPaidBefore = existingPayments.reduce((sum, p) => sum + p.amount, 0);
+    const totalPaidAfter = totalPaidBefore + amount;
+
     const payment = await prisma.payment.create({
       data: {
         billId,
@@ -41,18 +49,19 @@ export async function POST(request: Request) {
       },
     });
 
-    // Update bill status to lunas
+    // Update status tagihan secara dinamis
+    // Jika total terbayar sudah mencakup nominal tagihan, set Lunas. Jika kurang, tetap belum_bayar (cicil)
+    const isFullyPaid = totalPaidAfter >= bill.amount;
     await prisma.bill.update({
       where: { id: billId },
-      data: { status: 'lunas' },
+      data: { status: isFullyPaid ? 'lunas' : 'belum_bayar' },
     });
 
-    // Check if tenant has any remaining unpaid bills
+    // Check if tenant has any remaining unpaid bills (including partially unpaid ones)
     const remainingUnpaid = await prisma.bill.count({
       where: {
         tenantId: bill.tenantId,
         status: 'belum_bayar',
-        id: { not: billId },
       },
     });
 

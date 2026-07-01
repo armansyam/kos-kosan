@@ -91,9 +91,13 @@ export default function TagihanPage() {
   async function handlePay(e: React.FormEvent) {
     e.preventDefault();
     if (!showPayModal) return;
+    const totalPaid = showPayModal.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+    const remaining = showPayModal.amount - totalPaid;
+    const payAmount = payForm.amount !== undefined && !isNaN(payForm.amount) ? payForm.amount : remaining;
+
     await fetch('/api/payments', {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ ...payForm, billId: showPayModal.id, amount: payForm.amount || showPayModal.amount }),
+      body: JSON.stringify({ ...payForm, billId: showPayModal.id, amount: payAmount }),
     });
     setShowPayModal(null);
     showToast('Pembayaran berhasil dicatat');
@@ -158,10 +162,22 @@ export default function TagihanPage() {
   function getStatusBadge(bill: Bill) {
     const days = getDaysLeft(bill.dueDate);
     if (bill.status === 'lunas') return <span className="badge badge-success"><Check size={12} /> Lunas</span>;
-    if (bill.status === 'menunggak') return <span className="badge badge-danger">Menunggak</span>;
+    
+    // Hitung total cicilan yang masuk
+    const totalPaid = bill.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+    
+    if (bill.status === 'menunggak') {
+      return (
+        <span className="badge badge-danger">
+          Menunggak {totalPaid > 0 ? `(Sisa: ${formatRp(bill.amount - totalPaid)})` : ''}
+        </span>
+      );
+    }
+    
     return (
       <span className={`badge ${days < 0 ? 'badge-danger' : days <= 3 ? 'badge-warning' : 'badge-info'}`}>
         {days < 0 ? `Terlambat ${Math.abs(days)} hari` : `${days} hari lagi`}
+        {totalPaid > 0 ? ` (Sisa: ${formatRp(bill.amount - totalPaid)})` : ''}
       </span>
     );
   }
@@ -287,7 +303,18 @@ export default function TagihanPage() {
                                       <MessageCircle size={14} />
                                     </button>
                                     {bill.status !== 'lunas' && (
-                                      <button onClick={(e) => { e.stopPropagation(); setShowPayModal(bill); setPayForm({ paymentDate: new Date().toISOString().split('T')[0], paymentMethod:'transfer', amount: bill.amount, notes:'' }); }}
+                                      <button onClick={(e) => {
+                                        e.stopPropagation();
+                                        const totalPaid = bill.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+                                        const remaining = bill.amount - totalPaid;
+                                        setShowPayModal(bill);
+                                        setPayForm({
+                                          paymentDate: new Date().toISOString().split('T')[0],
+                                          paymentMethod: 'transfer',
+                                          amount: remaining,
+                                          notes: ''
+                                        });
+                                      }}
                                         className="btn btn-success btn-sm">
                                         <Check size={14} /> Bayar
                                       </button>
@@ -367,7 +394,17 @@ export default function TagihanPage() {
               <div className="modal-body">
                 <div style={{ background:'var(--bg-primary)', borderRadius:8, padding:'12px 16px', marginBottom:16 }}>
                   <p style={{ fontSize:13, fontWeight:600 }}>{showPayModal.tenant.fullName} — Kamar {showPayModal.tenant.room.name}</p>
-                  <p style={{ fontSize:12, color:'var(--text-secondary)' }}>Tagihan {showPayModal.month} • {formatRp(showPayModal.amount)}</p>
+                  {(() => {
+                    const totalPaid = showPayModal.payments?.reduce((sum, p) => sum + p.amount, 0) || 0;
+                    const remaining = showPayModal.amount - totalPaid;
+                    return (
+                      <div style={{ fontSize:12, color:'var(--text-secondary)', marginTop: 4, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <p>Total Tagihan: {formatRp(showPayModal.amount)}</p>
+                        {totalPaid > 0 && <p>Sudah Dibayar: <span style={{ color: '#16a34a', fontWeight: 600 }}>{formatRp(totalPaid)}</span></p>}
+                        <p style={{ fontWeight: 600 }}>Sisa Tagihan: <span style={{ color: '#dc2626' }}>{formatRp(remaining)}</span></p>
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div className="form-grid">
                   <div className="form-group">
@@ -396,7 +433,7 @@ export default function TagihanPage() {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn btn-outline" onClick={() => setShowPayModal(null)}>Batal</button>
-                <button type="submit" className="btn btn-success"><Check size={16} /> Tandai Lunas</button>
+                <button type="submit" className="btn btn-success"><Check size={16} /> Sudah Bayar</button>
               </div>
             </form>
           </div>

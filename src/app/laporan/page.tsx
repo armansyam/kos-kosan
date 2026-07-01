@@ -41,7 +41,12 @@ export default function LaporanPage() {
 
   // === PENDAPATAN ===
   const totalIncome = payments.reduce((s, p) => s + p.amount, 0);
-  const totalUnpaid = bills.filter(b => b.status === 'belum_bayar').reduce((s, b) => s + b.amount, 0);
+  const totalUnpaid = bills
+    .filter(b => b.status === 'belum_bayar')
+    .reduce((s, b) => {
+      const paid = b.payments?.reduce((sum: number, p: any) => sum + p.amount, 0) || 0;
+      return s + (b.amount - paid);
+    }, 0);
   const totalPaid = bills.filter(b => b.status === 'lunas').reduce((s, b) => s + b.amount, 0);
   const paidBills = bills.filter(b => b.status === 'lunas').length;
   const unpaidBills = bills.filter(b => b.status === 'belum_bayar').length;
