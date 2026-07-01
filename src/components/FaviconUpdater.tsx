@@ -4,30 +4,39 @@ import { useEffect } from 'react';
 
 export function FaviconUpdater() {
   useEffect(() => {
+    // Jalankan hanya SEKALI per session browser (bukan tiap navigasi)
+    // Ini mencegah favicon di-download ulang setiap klik sidebar
+    if (sessionStorage.getItem('favicon-done')) return;
+
     fetch('/api/settings')
       .then((res) => res.json())
       .then((data) => {
         if (!data || data.error) return;
 
-        // 1. Update semua link favicon — pakai endpoint dinamis yang baca logo dari DB
-        //    Ini memastikan tab browser selalu pakai logo terbaru setelah settings berubah
-        const iconUrl = '/api/manifest/icon?size=32&t=' + Date.now(); // cache-bust
-        const rels = ['icon', 'shortcut icon', 'apple-touch-icon'];
+        sessionStorage.setItem('favicon-done', '1');
 
-        rels.forEach((rel) => {
-          // Hapus semua link lama untuk rel ini
-          document.querySelectorAll(`link[rel="${rel}"]`).forEach(el => el.remove());
+        // Update favicon hanya jika ada logo custom
+        if (data.logo) {
+          // Gunakan endpoint tanpa cache-buster agar browser bisa cache dengan benar
+          const iconHref = '/api/manifest/icon?size=32';
+          const appleHref = '/api/manifest/icon?size=192';
 
-          // Buat baru
-          const link = document.createElement('link');
-          link.rel = rel;
-          link.href = rel === 'apple-touch-icon'
-            ? '/api/manifest/icon?size=192&t=' + Date.now()
-            : iconUrl;
-          document.head.appendChild(link);
-        });
+          const setIcon = (rel: string, href: string) => {
+            let link = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement;
+            if (!link) {
+              link = document.createElement('link');
+              link.rel = rel;
+              document.head.appendChild(link);
+            }
+            if (link.href !== href) link.href = href;
+          };
 
-        // 2. Update tab title jika nama kos sudah di-setting
+          setIcon('icon', iconHref);
+          setIcon('shortcut icon', iconHref);
+          setIcon('apple-touch-icon', appleHref);
+        }
+
+        // Update tab title sekali saja
         if (data.namaKos) {
           const currentTitle = document.title;
           if (currentTitle.includes('—')) {
@@ -38,7 +47,7 @@ export function FaviconUpdater() {
           }
         }
       })
-      .catch((err) => console.error('FaviconUpdater error:', err));
+      .catch(() => {});
   }, []);
 
   return null;

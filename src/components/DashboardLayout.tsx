@@ -103,13 +103,21 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   }, [session]);
 
   useEffect(() => {
+    // Throttle: hanya fetch dari network jika cache lebih dari 5 menit
+    // Ini mencegah DB hit pada setiap klik sidebar
+    const ts = localStorage.getItem('kos-settings-ts');
+    const isStale = !ts || (Date.now() - parseInt(ts)) > 5 * 60 * 1000;
+    if (!isStale) return;
+
     fetch('/api/settings')
       .then(r => r.json())
       .then(data => {
         if (data && !data.error) {
           setSettings(data);
-          // Simpan ke localStorage agar navigasi berikutnya langsung dari cache
-          try { localStorage.setItem('kos-settings', JSON.stringify(data)); } catch {}
+          try {
+            localStorage.setItem('kos-settings', JSON.stringify(data));
+            localStorage.setItem('kos-settings-ts', Date.now().toString());
+          } catch {}
           document.documentElement.style.setProperty('--primary', data.colorUtama || '#6366F1');
           document.documentElement.style.setProperty('--primary-dark', (data.colorUtama || '#6366F1') + 'dd');
           document.documentElement.style.setProperty('--sidebar-bg', data.colorSidebar || '#111827');
