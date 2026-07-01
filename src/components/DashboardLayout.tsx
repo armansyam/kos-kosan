@@ -2,7 +2,7 @@
 
 import { ReactNode, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { signOut, useSession } from 'next-auth/react';
 import {
   LayoutDashboard,
@@ -35,6 +35,7 @@ const navItems = [
 
 export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const { data: session } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settings, setSettings] = useState<any>(null);
@@ -148,7 +149,11 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           </Link>
           <div style={{ height: 1, background: 'rgba(255,255,255,0.07)', margin: '6px 0' }} />
           <button
-            onClick={() => signOut({ callbackUrl: '/login' })}
+            onClick={async () => {
+              await signOut({ redirect: false });
+              router.push('/login');
+              router.refresh();
+            }}
             className="nav-item"
             style={{ color: '#f87171' }}
           >

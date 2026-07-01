@@ -95,8 +95,8 @@ export default function LoginPage() {
               <Mail size={17} className="input-icon" />
               <input
                 id="email"
-                type="email"
-                placeholder="admin@super.com"
+                type="text"
+                placeholder="admin@super.com atau username"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required

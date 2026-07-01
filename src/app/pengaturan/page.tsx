@@ -403,7 +403,7 @@ export default function PengaturanPage() {
               <h3>Kontak & Media Sosial</h3>
             </div>
             <div className="card-body">
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16 }}>
+              <div className="form-grid-2col">
                 <div>
                   <label style={labelStyle}><Phone size={14} style={{marginRight:4}} /> Telepon</label>
                   <input type="tel" value={profile.telepon} onChange={e => setProfile(p => ({...p, telepon: e.target.value}))} style={inputStyle} />
@@ -462,7 +462,7 @@ export default function PengaturanPage() {
               <h3>Tampilan Landing Page</h3>
             </div>
             <div className="card-body">
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom: 16 }}>
+              <div className="form-grid-2col" style={{ marginBottom: 16 }}>
                 <div>
                   <label style={labelStyle}>Warna Utama</label>
                   <div style={{ display:'flex', alignItems:'center', gap:10 }}>
@@ -642,7 +642,7 @@ export default function PengaturanPage() {
               <h3>{session?.user && (session.user as any).role === 'super_admin' ? 'Akun Keamanan Owner (Super Admin)' : 'Akun Keamanan Staff / Kasir'}</h3>
             </div>
             <div className="card-body">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+              <div className="form-grid-2col">
                 <div style={{ gridColumn: 'span 2' }}>
                   <label style={labelStyle}>{session?.user && (session.user as any).role === 'super_admin' ? 'Nama Owner' : 'Nama Staff'}</label>
                   <input 
@@ -656,7 +656,7 @@ export default function PengaturanPage() {
                 <div>
                   <label style={labelStyle}>{session?.user && (session.user as any).role === 'super_admin' ? 'Email / Username Owner' : 'Email / Username Staff (Tidak Dapat Diubah)'}</label>
                   <input 
-                    type="email" 
+                    type="text" 
                     value={accountEmail} 
                     onChange={e => setAccountEmail(e.target.value)} 
                     style={inputStyle} 
@@ -713,7 +713,7 @@ export default function PengaturanPage() {
                   <h3>Tambah Akun Staff / Kasir Baru</h3>
                 </div>
                 <div className="card-body">
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
+                  <div className="form-grid-2col">
                     <div>
                       <label style={labelStyle}>Nama Staff</label>
                       <input 
@@ -728,11 +728,11 @@ export default function PengaturanPage() {
                     <div>
                       <label style={labelStyle}>Email / Username Staff</label>
                       <input 
-                        type="email" 
+                        type="text" 
                         value={newStaffEmail} 
                         onChange={e => setNewStaffEmail(e.target.value)} 
                         style={inputStyle} 
-                        placeholder="kasir@ams.com"
+                        placeholder="kasir@ams.com atau username"
                         required 
                       />
                     </div>
