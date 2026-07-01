@@ -1,15 +1,21 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+function parseDateInput(dateStr: string) {
+  // Hindari shift timezone saat input type="date"
+  // Simpan sebagai tanggal lokal stabil
+  return new Date(`${dateStr}T12:00:00`);
+}
+
 export async function PUT(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const body = await request.json();
-    const { fullName, whatsapp, roomId, monthlyPrice, dueDate, notes, active } = body;
-
+    const { fullName, whatsapp, roomId, checkInDate, monthlyPrice, dueDate, notes, active } = body;
+    console.log('Received checkInDate:', checkInDate); // Tambah log
     // Get current tenant to see if roomId changed
     const currentTenant = await prisma.tenant.findUnique({
       where: { id },
@@ -34,7 +40,16 @@ export async function PUT(
 
     const tenant = await prisma.tenant.update({
       where: { id },
-      data: { fullName, whatsapp, roomId, monthlyPrice, dueDate, notes, active },
+      data: {
+        fullName,
+        whatsapp,
+        roomId,
+        checkInDate: checkInDate ? parseDateInput(checkInDate) : undefined,
+        monthlyPrice,
+        dueDate,
+        notes,
+        active,
+      },
     });
 
     // If room changed, adjust room statuses
@@ -66,10 +81,10 @@ export async function PUT(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const body = await request.json();
 
     if (body.action === 'checkout') {
@@ -93,10 +108,10 @@ export async function PATCH(
 
 export async function DELETE(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: { id: string } }
 ) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const body = await request.json().catch(() => ({}));
     const { reason } = body as { reason?: string };
 

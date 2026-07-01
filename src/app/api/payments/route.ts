@@ -21,6 +21,15 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { billId, paymentDate, paymentMethod, amount, notes } = body;
 
+    if (!billId) {
+      return NextResponse.json({ error: 'billId wajib diisi' }, { status: 400 });
+    }
+
+    const normalizedAmount = Number(amount);
+    if (!Number.isFinite(normalizedAmount) || normalizedAmount <= 0) {
+      return NextResponse.json({ error: 'Nominal pembayaran tidak valid' }, { status: 400 });
+    }
+
     // Get the bill first to find the tenant and room
     const bill = await prisma.bill.findUnique({
       where: { id: billId },
@@ -31,20 +40,42 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Tagihan tidak ditemukan' }, { status: 404 });
     }
 
+    const paymentDateValue = paymentDate ? new Date(paymentDate) : new Date();
+
+    // Guard anti-submit dobel: block payment sama persis untuk tagihan yang sama
+    const duplicatePayment = await prisma.payment.findFirst({
+      where: {
+        billId,
+        amount: normalizedAmount,
+        paymentMethod: paymentMethod || 'transfer',
+        paymentDate: paymentDate ? {
+          gte: new Date(paymentDateValue.getTime() - 1000),
+          lte: new Date(paymentDateValue.getTime() + 1000),
+        } : undefined,
+      },
+    });
+
+    if (duplicatePayment) {
+      return NextResponse.json(
+        { error: 'Pembayaran duplikat terdeteksi. Data sudah tersimpan sebelumnya.' },
+        { status: 409 }
+      );
+    }
+
     // Dapatkan data pembayaran lama untuk menghitung total cicilan
     const existingPayments = await prisma.payment.findMany({
       where: { billId },
     });
 
     const totalPaidBefore = existingPayments.reduce((sum, p) => sum + p.amount, 0);
-    const totalPaidAfter = totalPaidBefore + amount;
+    const totalPaidAfter = totalPaidBefore + normalizedAmount;
 
     const payment = await prisma.payment.create({
       data: {
         billId,
-        paymentDate: paymentDate ? new Date(paymentDate) : new Date(),
+        paymentDate: paymentDateValue,
         paymentMethod: paymentMethod || 'transfer',
-        amount,
+        amount: normalizedAmount,
         notes: notes || '',
       },
     });

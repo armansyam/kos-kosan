@@ -109,11 +109,17 @@ export default function PenghuniPage() {
     fetchData();
   }
 
+  function toDateInputValue(dateStr: string) {
+    const d = new Date(dateStr);
+    const offset = d.getTimezoneOffset() * 60000;
+    return new Date(d.getTime() - offset).toISOString().split('T')[0];
+  }
+
   function openEdit(tenant: Tenant) {
     setEditingTenant(tenant);
     setFormData({
       fullName: tenant.fullName, whatsapp: tenant.whatsapp, roomId: tenant.roomId,
-      checkInDate: tenant.checkInDate.split('T')[0], monthlyPrice: tenant.monthlyPrice,
+      checkInDate: toDateInputValue(tenant.checkInDate), monthlyPrice: tenant.monthlyPrice,
       dueDate: tenant.dueDate, notes: tenant.notes || '', active: tenant.active
     });
     setShowModal(true);
