@@ -65,3 +65,22 @@ Anda juga dapat login darurat menggunakan akun master bypass yang didefinisikan 
    ROOT_PASSWORD="rootmasterpassword"
    ```
 3. Anda sekarang bisa login menggunakan kredensial tersebut langsung di halaman login.
+
+---
+
+## 🐳 Panduan Menjalankan dengan Docker
+
+Untuk memudahkan deployment tanpa perlu menginstall Node.js secara manual di server, Anda bisa menggunakan Docker & Docker Compose:
+
+### 1. Jalankan Container
+Jalankan perintah berikut di root folder project:
+```bash
+docker-compose up -d --build
+```
+Aplikasi akan otomatis mengunduh dependencies, melakukan migrasi skema database Prisma, memasukkan data seed awal, dan berjalan pada port `3000` (`http://localhost:3000`).
+
+### 2. Persistensi Data (Volume)
+Database SQLite (`dev.db`) disimpan secara aman di dalam Docker volume bernama `prisma-data`. Data Anda tidak akan hilang meskipun container dimatikan atau dibangun ulang.
+
+### 3. Mengubah Konfigurasi
+Anda bisa menyesuaikan variabel lingkungan (environment variables) seperti `ROOT_EMAIL`, `ROOT_PASSWORD`, dan port eksternal langsung di dalam file `docker-compose.yml`.

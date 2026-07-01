@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+  kos-app:
+    build: .
+    container_name: kos-app
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=file:./prisma/dev.db
+      - NEXTAUTH_SECRET=kos-app-secret-key-change-in-production
+      - NEXTAUTH_URL=http://localhost:3000
+      - ROOT_EMAIL=root@super.com
+      - ROOT_PASSWORD=superrootpassword
+    volumes:
+      # Mount prisma directory to persist the SQLite database file
+      - prisma-data:/app/prisma
+
+volumes:
+  prisma-data:
