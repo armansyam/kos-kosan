@@ -73,7 +73,9 @@ export default function LoginPage() {
         {/* Header */}
          <div style={{ textAlign: 'center', marginBottom: 32 }}>
           <div className="login-icon" style={settings?.logo ? { background: `url(${settings.logo}) center/cover no-repeat` } : undefined}>
-            {!settings?.logo && <Building2 size={32} />}
+            {/* Saat masih loading settings → tidak tampilkan apa-apa.
+                Setelah load → tampilkan Building2 hanya jika tidak ada logo */}
+            {!loadingSettings && !settings?.logo && <Building2 size={32} />}
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 700, color: '#0f172a', marginBottom: 6 }}>
             {settings?.namaKos || "Manajemen Kos"}

@@ -99,8 +99,13 @@ export default function LandingPage() {
         {/* Nav */}
         <nav className="landing-nav">
           <div className="landing-brand">
-            <div className="landing-brand-icon" style={settings?.logo ? { background: `url(${settings.logo}) center/cover no-repeat` } : undefined}>
-              {!settings?.logo && <Building2 size={20} color="#fff" />}
+            <div
+              className="landing-brand-icon"
+              style={settings?.logo ? { background: `url(${settings.logo}) center/cover no-repeat` } : undefined}
+            >
+              {/* Saat loading (settings===null): tidak tampilkan apa-apa.
+                  Setelah load: tampilkan Building2 hanya jika benar-benar tidak ada logo */}
+              {settings !== null && !settings.logo && <Building2 size={20} color="#fff" />}
             </div>
             <div>
               <div className="landing-brand-name">{settings?.namaKos || "A'aTHaRaZ"}</div>

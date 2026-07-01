@@ -148,6 +148,7 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
           ) : (
             <>
               <div className="sidebar-brand-icon" style={settings.logo ? { background: `url(${settings.logo}) center/cover no-repeat` } : undefined}>
+                {/* settings sudah di-load — tampilkan Building2 hanya jika memang tidak ada logo */}
                 {!settings.logo && <Building2 size={20} />}
               </div>
               <div>
