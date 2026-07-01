@@ -1,17 +1,15 @@
 // Service Worker untuk Kos-kosan PWA
-const CACHE_NAME = 'koskosan-v1';
-const STATIC_ASSETS = [
-  '/',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-];
+// Versi: v2 — lebih konservatif, tidak intercept navigasi HTML
+const CACHE_NAME = 'koskosan-v2';
 
-// ── Install: cache static assets ──
+// ── Install ──
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(STATIC_ASSETS);
+      return cache.addAll([
+        '/icons/icon-192.png',
+        '/icons/icon-512.png',
+      ]);
     })
   );
   self.skipWaiting();
@@ -31,51 +29,40 @@ self.addEventListener('activate', (event) => {
   self.clients.claim();
 });
 
-// ── Fetch: Network First, fallback ke cache ──
+// ── Fetch ──
 self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
-  // Abaikan request non-GET dan API calls (selalu ambil dari network)
+  // Abaikan semua non-GET
   if (request.method !== 'GET') return;
+
+  // JANGAN intercept navigasi HTML — biarkan browser & Next.js handle sendiri
+  // Ini mencegah bug: SW return halaman yang salah saat route belum compiled
+  if (request.mode === 'navigate') return;
+
+  // JANGAN intercept Next.js internal requests (JS chunks, CSS, data)
+  if (url.pathname.startsWith('/_next/')) return;
+
+  // JANGAN intercept API calls
   if (url.pathname.startsWith('/api/')) return;
 
-  // Untuk halaman navigasi: Network first, fallback ke cache
-  if (request.mode === 'navigate') {
-    event.respondWith(
-      fetch(request)
-        .then((response) => {
-          // Simpan response ke cache
-          const clone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-          return response;
-        })
-        .catch(() => {
-          // Kalau offline, coba dari cache
-          return caches.match(request).then((cached) => {
-            return cached || caches.match('/');
-          });
-        })
-    );
-    return;
-  }
-
-  // Untuk aset statis (js, css, images): Cache first
-  if (
-    url.pathname.match(/\.(js|css|png|jpg|jpeg|svg|ico|woff2?)$/)
-  ) {
+  // Hanya cache icon/gambar statis dari folder /icons/
+  // Ini ringan dan tidak mengganggu routing Next.js
+  if (url.pathname.startsWith('/icons/') &&
+      url.pathname.match(/\.(png|jpg|jpeg|svg|ico|webp)$/)) {
     event.respondWith(
       caches.match(request).then((cached) => {
-        return (
-          cached ||
-          fetch(request).then((response) => {
+        return cached || fetch(request).then((response) => {
+          if (response.ok) {
             const clone = response.clone();
             caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
-            return response;
-          })
-        );
+          }
+          return response;
+        });
       })
     );
-    return;
   }
+
+  // Semua request lain: biarkan browser handle normal (tidak di-intercept)
 });
