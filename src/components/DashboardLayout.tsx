@@ -42,9 +42,53 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settings, setSettings] = useState<any>(null);
   const [showDevOverlay, setShowDevOverlay] = useState(false);
+  const [updateAvailable, setUpdateAvailable] = useState(false);
+  const [latestVersion, setLatestVersion] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check GitHub for updates
+    if (session?.user && (session.user as any).role === 'super_admin') {
+      fetch('https://api.github.com/repos/armansyam/kos-kosan/releases/latest')
+        .then(res => {
+          if (!res.ok) throw new Error('GitHub API limit');
+          return res.json();
+        })
+        .then(data => {
+          if (data && data.tag_name) {
+            const remoteVer = data.tag_name.replace(/^v/, '');
+            const localVer = packageJson.version.replace(/^v/, '');
+            
+            if (remoteVer !== localVer) {
+              const remoteParts = remoteVer.split('.').map(Number);
+              const localParts = localVer.split('.').map(Number);
+              
+              let isNewer = false;
+              for (let i = 0; i < Math.max(remoteParts.length, localParts.length); i++) {
+                const r = remoteParts[i] || 0;
+                const l = localParts[i] || 0;
+                if (r > l) {
+                  isNewer = true;
+                  break;
+                }
+                if (r < l) {
+                  break;
+                }
+              }
+              
+              if (isNewer) {
+                setUpdateAvailable(true);
+                setLatestVersion(data.tag_name);
+              }
+            }
+          }
+        })
+        .catch(() => {});
+    }
+  }, [session]);
 
   useEffect(() => {
     fetch('/api/settings')
+
       .then(r => r.json())
       .then(data => {
         if (data && !data.error) {
@@ -217,22 +261,44 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
         className="dev-watermark-btn" 
         onClick={() => setShowDevOverlay(!showDevOverlay)}
         title="Developer Info"
+        style={{ position: 'relative' }}
       >
         <img 
           src="/ams-logo.png" 
           alt="AMS Logo" 
           style={{ width: '38px', height: '38px', objectFit: 'contain' }} 
         />
+        {updateAvailable && (
+          <span style={{
+            position: 'absolute',
+            top: '2px',
+            right: '2px',
+            width: '10px',
+            height: '10px',
+            borderRadius: '50%',
+            background: '#ef4444',
+            border: '2px solid #fff',
+            boxShadow: '0 0 8px #ef4444',
+            animation: 'pulseGlow 1.5s infinite',
+          }} />
+        )}
       </div>
 
       {showDevOverlay && (
         <div className="dev-watermark-popup">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--text-secondary)', fontWeight: 700 }}>Developer Credit</span>
-            <div className="dev-watermark-status">
-              <span className="dev-watermark-dot" />
-              <span>Active Release</span>
-            </div>
+            {updateAvailable ? (
+              <div className="dev-watermark-status" style={{ color: '#c2410c', background: '#fff7ed', borderColor: '#ffedd5' }}>
+                <span className="dev-watermark-dot" style={{ background: '#f97316', boxShadow: '0 0 8px #f97316' }} />
+                <span>Update Available</span>
+              </div>
+            ) : (
+              <div className="dev-watermark-status">
+                <span className="dev-watermark-dot" />
+                <span>Active Release</span>
+              </div>
+            )}
           </div>
           <div>
             <img 
@@ -240,6 +306,24 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
               alt="AMS Logo" 
               style={{ height: '36px', objectFit: 'contain', marginBottom: '8px', display: 'block' }} 
             />
+            {updateAvailable && (
+              <div style={{
+                background: '#fff7ed',
+                border: '1px solid #ffedd5',
+                borderRadius: '10px',
+                padding: '10px 12px',
+                fontSize: '11px',
+                color: '#c2410c',
+                lineHeight: '1.4',
+                marginBottom: '10px',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '2px'
+              }}>
+                <span style={{ fontWeight: 700 }}>Pembaruan Tersedia!</span>
+                <span>Versi terbaru ({latestVersion}) telah dirilis di GitHub. Hubungi administrator untuk melakukan update.</span>
+              </div>
+            )}
             <p style={{ margin: 0, fontSize: '12px', color: 'var(--text-secondary)', lineHeight: '1.4' }}>
               Designed, built, and optimized with Next.js, Prisma, and custom styling.
             </p>
