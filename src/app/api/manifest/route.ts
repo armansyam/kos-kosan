@@ -38,7 +38,7 @@ export async function GET() {
       start_url: '/',
       scope: '/',
       display: 'standalone',
-      orientation: 'portrait',
+      orientation: 'any',
       background_color: '#0f0f23',
       theme_color: colorUtama,
       lang: 'id',
