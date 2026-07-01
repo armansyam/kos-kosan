@@ -40,7 +40,23 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
   const router = useRouter();
   const { data: session } = useSession();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [settings, setSettings] = useState<any>(null);
+  // Inisialisasi settings langsung dari cache localStorage
+  // agar sidebar tidak perlu skeleton setiap navigasi
+  const [settings, setSettings] = useState<any>(() => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const cached = localStorage.getItem('kos-settings');
+      if (cached) {
+        const data = JSON.parse(cached);
+        // Apply CSS variables dari cache secara synchronous
+        document.documentElement.style.setProperty('--primary', data.colorUtama || '#6366F1');
+        document.documentElement.style.setProperty('--primary-dark', (data.colorUtama || '#6366F1') + 'dd');
+        document.documentElement.style.setProperty('--sidebar-bg', data.colorSidebar || '#111827');
+        return data;
+      }
+    } catch {}
+    return null;
+  });
   const [showDevOverlay, setShowDevOverlay] = useState(false);
   const [updateAvailable, setUpdateAvailable] = useState(false);
   const [latestVersion, setLatestVersion] = useState<string | null>(null);
@@ -88,11 +104,12 @@ export default function DashboardLayout({ children }: DashboardLayoutProps) {
 
   useEffect(() => {
     fetch('/api/settings')
-
       .then(r => r.json())
       .then(data => {
         if (data && !data.error) {
           setSettings(data);
+          // Simpan ke localStorage agar navigasi berikutnya langsung dari cache
+          try { localStorage.setItem('kos-settings', JSON.stringify(data)); } catch {}
           document.documentElement.style.setProperty('--primary', data.colorUtama || '#6366F1');
           document.documentElement.style.setProperty('--primary-dark', (data.colorUtama || '#6366F1') + 'dd');
           document.documentElement.style.setProperty('--sidebar-bg', data.colorSidebar || '#111827');
