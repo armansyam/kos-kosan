@@ -130,7 +130,7 @@ export default function KamarPage() {
         <div style={{ textAlign:'center', padding:60 }}><div className="spinner" style={{ borderTopColor:'var(--primary)', width:40, height:40, margin:'0 auto' }} /></div>
       ) : (
         <div className="room-groups-list">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
             {filteredRooms.map(room => {
               const tenant = room.tenants?.[0];
               const cardColor = room.status === 'terisi' 
@@ -145,7 +145,7 @@ export default function KamarPage() {
                   className="dash-room-card"
                   style={{
                     background: 'white',
-                    borderRadius: '14px',
+                    borderRadius: '12px',
                     border: '1px solid var(--border)',
                     overflow: 'hidden',
                     boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
@@ -158,30 +158,30 @@ export default function KamarPage() {
                   <div style={{ height: '5px', background: cardColor }} />
                   
                   {/* Card Content */}
-                  <div style={{ padding: '16px', flex: 1, display: 'flex', flexDirection: 'column' }}>
+                  <div style={{ padding: '14px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                     {/* Header: Room Name & Status Badge */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '12px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '10px' }}>
                       <span style={{
                         background: '#eef2ff',
                         color: 'var(--primary)',
-                        fontSize: '14px',
+                        fontSize: '12px',
                         fontWeight: 800,
                         padding: '3px 10px',
-                        borderRadius: '8px',
+                        borderRadius: '6px',
                         border: '1px solid #e0e7ff'
                       }}>
                         {room.name}
                       </span>
-                      {room.status === 'terisi' && <span className="badge badge-success" style={{ fontSize: '11px' }}>Terisi</span>}
-                      {room.status === 'kosong' && <span className="badge badge-gray" style={{ fontSize: '11px' }}>Kosong</span>}
-                      {room.status === 'menunggak' && <span className="badge badge-danger" style={{ fontSize: '11px' }}>Menunggak</span>}
+                      {room.status === 'terisi' && <span className="badge badge-success" style={{ fontSize: '10px', padding: '2px 6px' }}>Terisi</span>}
+                      {room.status === 'kosong' && <span className="badge badge-gray" style={{ fontSize: '10px', padding: '2px 6px' }}>Kosong</span>}
+                      {room.status === 'menunggak' && <span className="badge badge-danger" style={{ fontSize: '10px', padding: '2px 6px' }}>Menunggak</span>}
                     </div>
-
+ 
                     {/* Tenant Details */}
-                    <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '6px', marginBottom: '12px', flex: 1 }}>
+                    <div style={{ fontSize: '12px', color: '#475569', display: 'flex', flexDirection: 'column', gap: '4px', marginBottom: '12px', flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ color: '#94a3b8' }}>Penghuni</span>
-                        <span style={{ fontWeight: 600, color: tenant ? '#1e293b' : '#94a3b8' }}>
+                        <span style={{ fontWeight: 600, color: tenant ? '#1e293b' : '#94a3b8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '120px' }} title={tenant?.fullName}>
                           {tenant ? tenant.fullName : 'Tidak ada'}
                         </span>
                       </div>
@@ -196,19 +196,19 @@ export default function KamarPage() {
                         </div>
                       )}
                     </div>
-
+ 
                     {/* Actions bar */}
                     <div style={{
                       display: 'flex',
-                      gap: '8px',
+                      gap: '6px',
                       justifyContent: 'flex-end',
                       borderTop: '1px solid #f1f5f9',
-                      paddingTop: '10px'
+                      paddingTop: '8px'
                     }}>
-                      <button onClick={() => openEdit(room)} className="btn btn-outline btn-sm" title="Edit Kamar" style={{ padding: '5px 9px' }}>
+                      <button onClick={() => openEdit(room)} className="btn btn-outline btn-sm" title="Edit Kamar" style={{ padding: '4px 8px', height: '28px', width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Edit size={13} />
                       </button>
-                      <button onClick={() => handleDelete(room.id)} className="btn btn-danger btn-sm" title="Hapus Kamar" style={{ padding: '5px 9px' }}>
+                      <button onClick={() => handleDelete(room.id)} className="btn btn-danger btn-sm" title="Hapus Kamar" style={{ padding: '4px 8px', height: '28px', width: '28px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                         <Trash2 size={13} />
                       </button>
                     </div>
