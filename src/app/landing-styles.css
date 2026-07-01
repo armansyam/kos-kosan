@@ -366,18 +366,25 @@
 }
 
 .facilities-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-  gap: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 14px;
+  /* Maksimal 5 card per baris: 5 × 128px + 4 × 14px gap = 696px */
+  max-width: 700px;
+  margin: 0 auto;
 }
 
 .facility-card {
   text-align: center;
-  padding: 28px 16px;
+  padding: 20px 12px;
   background: #f8fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 16px;
+  border-radius: 14px;
   transition: all 0.2s ease;
+  /* Fixed width agar tetap rapi & center */
+  flex: 0 0 128px;
+  width: 128px;
 }
 
 .facility-card:hover {
@@ -387,11 +394,11 @@
 }
 
 .facility-icon {
-  width: 48px;
-  height: 48px;
-  margin: 0 auto 12px;
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 10px;
   background: linear-gradient(135deg, #eef2ff, #e0e7ff);
-  border-radius: 12px;
+  border-radius: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -399,10 +406,11 @@
 }
 
 .facility-name {
-  font-size: 14px;
+  font-size: 12px;
   font-weight: 600;
   color: #334155;
   margin: 0;
+  line-height: 1.3;
 }
 
 /* ── Contact ── */
@@ -491,7 +499,13 @@
   }
 
   .facilities-grid {
-    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    max-width: 100%;
+  }
+
+  .facility-card {
+    flex: 0 0 calc(33.333% - 12px);
+    width: auto;
   }
 
   .landing-contact {
@@ -530,5 +544,14 @@
   }
   .landing-empty {
     padding: 32px 16px;
+  }
+  /* 2 card per baris di HP kecil, tetap center */
+  .facilities-grid {
+    gap: 10px;
+  }
+  .facility-card {
+    flex: 0 0 calc(50% - 10px);
+    width: auto;
+    padding: 16px 8px;
   }
 }
