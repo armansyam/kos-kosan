@@ -23,12 +23,12 @@ export async function GET(request: NextRequest) {
 
     // Jika logo adalah base64 data URL (format: data:image/...;base64,...)
     if (logo.startsWith('data:')) {
-      const matches = logo.match(/^data:([^;]+);base64,(.+)$/);
+      const matches = logo.match(/^data:([^;]+);base64,([\s\S]+)$/);
       if (!matches) {
         return NextResponse.redirect(new URL('/icons/icon-192.png', request.url));
       }
       const mimeType = matches[1];
-      const base64Data = matches[2];
+      const base64Data = matches[2].replace(/\s/g, '');
       const imageBuffer = Buffer.from(base64Data, 'base64');
 
       return new NextResponse(imageBuffer, {
